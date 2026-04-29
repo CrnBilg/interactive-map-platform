@@ -8,7 +8,9 @@
     "dev": "nodemon server.js",
     "seed": "node seed.js",
     "fetch:dogu": "node fetchDoguAnadoluPlaces.js",
-    "fetch:guneydogu": "node fetchGuneydoguAnadoluPlaces.js"
+    "fetch:guneydogu": "node fetchGuneydoguAnadoluPlaces.js",
+    "fetch:ege": "node fetchEgePlaces.js",
+    "fetch:marmara": "node fetchMarmaraPlaces.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
