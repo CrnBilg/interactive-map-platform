@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { citiesAPI, placesAPI } from '../services/api'
 import { MapPin, Landmark, Zap, ArrowRight, Star, Clock } from 'lucide-react'
+import { has360Imagery } from '../utils/place360'
 
 const categoryEmoji = { historical: '🏛️', museum: '🏺', mosque: '🕌', castle: '🏰', ruins: '⛏️', monument: '🗿', cultural: '🎭', other: '📍' }
 const categoryLabel = { historical: 'Tarihi', museum: 'Müze', mosque: 'Cami', castle: 'Kale', ruins: 'Harabe', monument: 'Anıt', cultural: 'Kültürel', other: 'Diğer' }
@@ -130,6 +131,9 @@ export default function HomePage() {
                       {categoryLabel[place.category]}
                     </span>
                     {place.period && <span className="text-stone-600 text-xs">{place.period}</span>}
+                  </div>
+                  <div className={`mt-3 text-xs ${has360Imagery(place) ? 'text-amber-400' : 'text-stone-600'}`}>
+                    {has360Imagery(place) ? '360 View' : '360 view not available yet'}
                   </div>
                 </div>
               </Link>

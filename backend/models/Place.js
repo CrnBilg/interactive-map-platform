@@ -17,7 +17,30 @@ const placeSchema = new mongoose.Schema(
     },
     address: { type: String },
     images: [{ type: String }],
-    panoramas: [{ type: String }], // 360° equirectangular image URLs (Pannellum)
+    panoramaUrl: { type: String },
+    panoramaxImageId: { type: String },
+    streetViewUrl: { type: String },
+    has360: { type: Boolean, default: false },
+    panoramas: [{ type: String }], // Legacy 360 equirectangular image URLs (Pannellum)
+    panoramaItems: [
+      {
+        url: { type: String, required: true },
+        mediaType: { type: String, enum: ['image', 'video'], default: 'image' },
+        title: { type: String },
+        sourceUrl: { type: String },
+        author: { type: String },
+        license: { type: String },
+        attribution: { type: String },
+      },
+    ],
+    streetView: {
+      panoId: { type: String },
+      heading: { type: Number, default: 0 },
+      pitch: { type: Number, default: 0 },
+      fov: { type: Number, default: 80 },
+      radius: { type: Number, default: 50 },
+      maxDistance: { type: Number, default: 50 },
+    },
     period: { type: String }, // e.g. "Ottoman Era", "Byzantine"
     entryFee: { type: Number, default: 0 },
     openingHours: { type: String },
@@ -29,6 +52,17 @@ const placeSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+placeSchema.pre('validate', function setHas360(next) {
+  this.has360 = Boolean(
+    this.panoramaUrl ||
+    this.panoramaxImageId ||
+    this.streetViewUrl ||
+    this.panoramas?.length ||
+    this.panoramaItems?.some(item => item?.url)
+  );
+  next();
+});
 
 placeSchema.index({ location: '2dsphere' });
 placeSchema.index({ city: 'text', name: 'text', description: 'text' });

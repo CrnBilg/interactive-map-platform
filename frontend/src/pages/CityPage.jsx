@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { citiesAPI, placesAPI } from '../services/api'
 import { MapPin, Landmark, Star, ArrowRight } from 'lucide-react'
+import { has360Imagery } from '../utils/place360'
 
 const categoryEmoji = { historical: '🏛️', museum: '🏺', mosque: '🕌', castle: '🏰', ruins: '⛏️', monument: '🗿', cultural: '🎭', other: '📍' }
 
@@ -46,6 +47,9 @@ export default function CityPage() {
             <div className="p-4">
               <h3 className="font-semibold text-stone-100 group-hover:text-amber-300 transition-colors">{place.name}</h3>
               <p className="text-stone-500 text-xs mt-1 line-clamp-2">{place.description}</p>
+              <div className={`mt-3 text-xs ${has360Imagery(place) ? 'text-amber-400' : 'text-stone-600'}`}>
+                {has360Imagery(place) ? '360 View' : '360 view not available yet'}
+              </div>
               <div className="flex items-center justify-between mt-3">
                 {place.rating > 0 && (
                   <span className="flex items-center gap-1 text-amber-400 text-xs">

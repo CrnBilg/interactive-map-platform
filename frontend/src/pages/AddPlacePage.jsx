@@ -14,7 +14,8 @@ export default function AddPlacePage() {
   const [form, setForm] = useState({
     name: '', description: '', category: 'historical', city: '',
     lat: '', lng: '', address: '', period: '', entryFee: 0,
-    openingHours: '', website: '', images: '', panoramas: ''
+    openingHours: '', website: '', images: '',
+    panoramaUrl: '', panoramaxImageId: '', streetViewUrl: '',
   })
   const [loading, setLoading] = useState(false)
 
@@ -27,8 +28,10 @@ export default function AddPlacePage() {
     try {
       const payload = {
         ...form,
-        images: form.images ? form.images.split('\n').filter(Boolean) : [],
-        panoramas: form.panoramas ? form.panoramas.split('\n').filter(Boolean) : [],
+        images: form.images ? form.images.split('\n').map(url => url.trim()).filter(Boolean) : [],
+        panoramaUrl: form.panoramaUrl.trim(),
+        panoramaxImageId: form.panoramaxImageId.trim(),
+        streetViewUrl: form.streetViewUrl.trim(),
       }
       const { data } = await placesAPI.create(payload)
       toast.success('Mekan eklendi!')
@@ -93,7 +96,7 @@ export default function AddPlacePage() {
             </div>
           </div>
           <p className="text-stone-600 text-xs flex items-center gap-1">
-            <MapPin size={11} /> Google Maps'te mekanı açıp sağ tıklayarak koordinat kopyalayabilirsiniz.
+            <MapPin size={11} /> OpenStreetMap veya başka bir harita uygulamasında mekanı açıp koordinatları kopyalayabilirsiniz.
           </p>
         </div>
 
@@ -117,15 +120,24 @@ export default function AddPlacePage() {
             <label className="block text-stone-400 text-sm mb-1.5">Fotoğraf URL'leri (her satıra bir tane)</label>
             <textarea className="input resize-none font-mono text-xs" rows={3} placeholder="https://upload.wikimedia.org/..." value={form.images} onChange={e => set('images', e.target.value)} />
           </div>
+        </div>
+
+        <div className="card p-5 space-y-4">
+          <h3 className="font-semibold text-stone-200">360 / Street-Level View</h3>
+          <p className="text-stone-500 text-xs leading-relaxed">
+            Optional. Google Maps Embed Street View is used automatically when the frontend has a Google Embed API key. Panoramax or a hosted 360 URL can be added as a fallback.
+          </p>
           <div>
-            <label className="block text-stone-400 text-sm mb-1.5">
-              360° Panorama URL'leri
-              <span className="ml-2 text-amber-500/70 text-xs">(equirectangular .jpg — her satıra bir tane)</span>
-            </label>
-            <textarea className="input resize-none font-mono text-xs" rows={3} placeholder="https://example.com/panorama-360.jpg" value={form.panoramas} onChange={e => set('panoramas', e.target.value)} />
-            <p className="text-stone-600 text-xs mt-1.5">
-              🌐 Ücretsiz 360° fotoğraf kaynakları: <a href="https://commons.wikimedia.org" target="_blank" rel="noopener noreferrer" className="text-amber-500/70 hover:text-amber-400">Wikimedia Commons</a>, <a href="https://round.me" target="_blank" rel="noopener noreferrer" className="text-amber-500/70 hover:text-amber-400">Round.me</a>
-            </p>
+            <label className="block text-stone-400 text-sm mb-1.5">Panoramax Image ID</label>
+            <input className="input font-mono text-xs" placeholder="panoramax-picture-id" value={form.panoramaxImageId} onChange={e => set('panoramaxImageId', e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-stone-400 text-sm mb-1.5">Panorama URL</label>
+            <input className="input" type="url" placeholder="https://example.com/panorama.jpg" value={form.panoramaUrl} onChange={e => set('panoramaUrl', e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-stone-400 text-sm mb-1.5">Street-level viewer URL</label>
+            <input className="input" type="url" placeholder="https://..." value={form.streetViewUrl} onChange={e => set('streetViewUrl', e.target.value)} />
           </div>
         </div>
 

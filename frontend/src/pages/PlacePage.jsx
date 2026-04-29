@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { MapPin, Star, Clock, DollarSign, Globe, Bookmark, BookmarkCheck, Trash2, ArrowLeft, Eye } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PanoramaModal from '../components/PanoramaModal'
+import { has360Imagery } from '../utils/place360'
 
 const categoryLabel = { historical: 'Tarihi', museum: 'Müze', mosque: 'Cami', castle: 'Kale', ruins: 'Harabe', monument: 'Anıt', cultural: 'Kültürel', other: 'Diğer' }
 const categoryEmoji = { historical: '🏛️', museum: '🏺', mosque: '🕌', castle: '🏰', ruins: '⛏️', monument: '🗿', cultural: '🎭', other: '📍' }
@@ -75,6 +76,8 @@ export default function PlacePage() {
 
   if (!place) return <div className="text-center py-20 text-stone-500">Mekan bulunamadı</div>
 
+  const has360 = has360Imagery(place)
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
       <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-stone-500 hover:text-stone-300 mb-6 transition-colors text-sm">
@@ -90,10 +93,11 @@ export default function PlacePage() {
         )}
         <div className="absolute top-4 right-4 flex gap-2">
           <button
-            onClick={() => setPanoramaOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl backdrop-blur-sm border bg-stone-900/80 border-stone-700 text-amber-400 hover:bg-amber-500 hover:text-stone-950 hover:border-amber-400 transition-all text-sm font-medium"
+            onClick={() => has360 && setPanoramaOpen(true)}
+            disabled={!has360}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl backdrop-blur-sm border transition-all text-sm font-medium ${has360 ? 'bg-stone-900/80 border-stone-700 text-amber-400 hover:bg-amber-500 hover:text-stone-950 hover:border-amber-400' : 'bg-stone-900/80 border-stone-800 text-stone-500 cursor-not-allowed'}`}
           >
-            <Eye size={15} /> 360° Panorama
+            <Eye size={15} /> {has360 ? '360 View' : '360 view not available yet'}
           </button>
           <button onClick={handleSave} className={`p-2.5 rounded-xl backdrop-blur-sm border transition-all ${saved ? 'bg-amber-500/90 border-amber-400 text-stone-950' : 'bg-stone-900/80 border-stone-700 text-stone-300 hover:text-amber-400'}`}>
             {saved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
