@@ -70,7 +70,7 @@ export default function MapPage() {
     if (selectedCategory !== 'all') params.category = selectedCategory
     if (searchTerm) params.search = searchTerm
 
-    placesAPI.getAll({ ...params, limit: 100 }).then(res => {
+    placesAPI.getAll({ ...params, limit: 500 }).then(res => {
       setPlaces(res.data.places)
       setLoading(false)
     })
