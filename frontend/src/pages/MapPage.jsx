@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom'
 import { Search, Filter, Zap, MapPin, Star, X, Plus, Clock } from 'lucide-react'
 import EventForm from '../components/EventForm'
 import PanoramaModal from '../components/PanoramaModal'
+import { has360Imagery } from '../utils/place360'
 import toast from 'react-hot-toast'
 import { formatDistanceToNow } from 'date-fns'
 import { tr } from 'date-fns/locale'
@@ -208,8 +209,8 @@ export default function MapPage() {
           zoomControl={false}
         >
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
           <MapController center={mapCenter} zoom={mapZoom} />
 
@@ -219,18 +220,21 @@ export default function MapPage() {
               key={place._id}
               position={[place.location.coordinates[1], place.location.coordinates[0]]}
               icon={placeIcon}
-              eventHandlers={{ click: () => setPanoramaPlace(place) }}
             >
               <Popup>
                 <div className="min-w-[200px]">
                   <div className="font-semibold text-stone-100 text-sm mb-1">{place.name}</div>
                   <div className="text-stone-400 text-xs mb-2 line-clamp-2">{place.description}</div>
-                  <button
-                    onClick={() => setPanoramaPlace(place)}
-                    className="text-amber-400 text-xs hover:underline flex items-center gap-1"
-                  >
-                    🔭 360° Panorama →
-                  </button>
+                  {has360Imagery(place) ? (
+                    <button
+                      onClick={() => setPanoramaPlace(place)}
+                      className="text-amber-400 text-xs hover:underline flex items-center gap-1"
+                    >
+                      360 View →
+                    </button>
+                  ) : (
+                    <div className="text-stone-500 text-xs">360 view not available yet</div>
+                  )}
                 </div>
               </Popup>
             </Marker>

@@ -50,7 +50,26 @@ const getPlace = async (req, res) => {
 // @POST /api/places
 const createPlace = async (req, res) => {
   try {
-    const { name, description, category, city, lat, lng, address, period, entryFee, openingHours, website, images, panoramas } = req.body;
+    const {
+      name,
+      description,
+      category,
+      city,
+      lat,
+      lng,
+      address,
+      period,
+      entryFee,
+      openingHours,
+      website,
+      images,
+      panoramaUrl,
+      panoramaxImageId,
+      streetViewUrl,
+      panoramas,
+      panoramaItems,
+      streetView,
+    } = req.body;
 
     const place = await Place.create({
       name,
@@ -64,7 +83,19 @@ const createPlace = async (req, res) => {
       openingHours,
       website,
       images: images || [],
+      panoramaUrl,
+      panoramaxImageId,
+      streetViewUrl,
       panoramas: panoramas || [],
+      panoramaItems: Array.isArray(panoramaItems) ? panoramaItems.filter(item => item?.url) : [],
+      streetView: {
+        panoId: streetView?.panoId || '',
+        heading: Number.isFinite(Number(streetView?.heading)) ? Number(streetView.heading) : 0,
+        pitch: Number.isFinite(Number(streetView?.pitch)) ? Number(streetView.pitch) : 0,
+        fov: Number.isFinite(Number(streetView?.fov)) ? Number(streetView.fov) : 80,
+        radius: Number.isFinite(Number(streetView?.radius)) ? Number(streetView.radius) : 50,
+        maxDistance: Number.isFinite(Number(streetView?.maxDistance)) ? Number(streetView.maxDistance) : 50,
+      },
       addedBy: req.user._id,
     });
 

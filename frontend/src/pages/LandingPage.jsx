@@ -374,8 +374,8 @@ export default function LandingPage() {
           {
             num: '03',
             icon: '🔭',
-            title: '360° Panorama',
-            desc: 'Pannellum ile her mekan için immersive 360° görünüm. Haritadan tek tıkla gir.',
+            title: '360 / Street-Level',
+            desc: 'Google Maps Embed, Panoramax veya kendi 360 görsel bağlantılarınla mekanlara sokak seviyesi görünüm ekle.',
           },
         ].map((f, i) => (
           <div
@@ -418,7 +418,7 @@ export default function LandingPage() {
           <span className="text-stone-700 text-xs ml-2">Web Programming SE 3355</span>
         </div>
         <div className="flex gap-2 flex-wrap justify-center">
-          {['React', 'Node.js', 'MongoDB', 'Socket.IO', 'Leaflet', 'Pannellum'].map(s => (
+          {['React', 'Node.js', 'MongoDB', 'Socket.IO', 'Leaflet', 'OpenStreetMap'].map(s => (
             <span key={s} className="text-xs border border-stone-800 text-stone-700 px-3 py-1 rounded-full">{s}</span>
           ))}
         </div>
