@@ -18,6 +18,9 @@ const cities = [
   { name: 'Trabzon', nameEn: 'Trabzon', region: 'Karadeniz', location: { type: 'Point', coordinates: [39.7178, 41.0027] }, description: 'Karadeniz\'in gözbebeği', placeCount: 0 },
   { name: 'Antalya', nameEn: 'Antalya', region: 'Akdeniz', location: { type: 'Point', coordinates: [30.7133, 36.8969] }, description: 'Turquoise Coast\'un kalbi', placeCount: 0 },
   { name: 'Cappadocia', nameEn: 'Cappadocia', region: 'İç Anadolu', location: { type: 'Point', coordinates: [34.8457, 38.6431] }, description: 'Peri bacaları ve yeraltı şehirleri', placeCount: 0 },
+  { name: 'Muğla', nameEn: 'Mugla', region: 'Ege', location: { type: 'Point', coordinates: [28.3665, 37.2153] }, description: 'Ege\'nin ve Akdeniz\'in buluştuğu yer', placeCount: 0 },
+  { name: 'Aydın', nameEn: 'Aydin', region: 'Ege', location: { type: 'Point', coordinates: [27.8456, 37.8380] }, description: 'Antik kentler diyarı', placeCount: 0 },
+  { name: 'Denizli', nameEn: 'Denizli', region: 'Ege', location: { type: 'Point', coordinates: [29.0875, 37.7830] }, description: 'Pamukkale travertenlerinin ev sahibi', placeCount: 0 },
 ];
 
 const places = [
@@ -55,6 +58,13 @@ const places = [
   // Cappadocia
   { name: 'Derinkuyu Yeraltı Şehri', description: '85 metre derinliğe inen, 20.000 kişinin yaşayabildiği Bizans dönemi yeraltı şehri.', category: 'historical', city: 'Cappadocia', location: { type: 'Point', coordinates: [34.7353, 38.3737] }, period: 'Byzantine', entryFee: 200, openingHours: '08:00 - 19:00', address: 'Derinkuyu/Nevşehir', images: [] },
   { name: 'Göreme Açık Hava Müzesi', description: 'UNESCO Dünya Mirası. Kaya kiliseleri ve fresklerle dolu vadide gezinti imkanı sunar.', category: 'museum', city: 'Cappadocia', location: { type: 'Point', coordinates: [34.8285, 38.6433] }, period: 'Byzantine', entryFee: 350, openingHours: '08:00 - 19:00', address: 'Göreme/Nevşehir', images: [] },
+
+  // Ege Bölgesi (İzmir, Aydın, Denizli, Muğla)
+  { name: 'Efes Antik Kenti', description: 'UNESCO Dünya Mirası. Antik çağın en önemli liman şehirlerinden ve Roma İmparatorluğu\'nun Asya eyaleti başkenti.', category: 'ruins', city: 'İzmir', location: { type: 'Point', coordinates: [27.3411, 37.9411] }, period: 'Roman', entryFee: 400, openingHours: '08:00 - 18:30', address: 'Selçuk/İzmir', images: [], has360: true, panoramaUrl: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Celsus_Library_Ephesus_Turkey.jpg' },
+  { name: 'Hierapolis Antik Kenti', description: 'Pamukkale travertenlerinin hemen yanında bulunan kutsal Frigya kenti.', category: 'ruins', city: 'Denizli', location: { type: 'Point', coordinates: [29.1258, 37.9258] }, period: 'Roman', entryFee: 400, openingHours: '08:00 - 19:00', address: 'Pamukkale/Denizli', images: [] },
+  { name: 'Bodrum Kalesi', description: '15. yüzyılda St. Jean Şövalyeleri tarafından inşa edilen ve Sualtı Arkeoloji Müzesi\'ne ev sahipliği yapan kale.', category: 'castle', city: 'Muğla', location: { type: 'Point', coordinates: [27.4288, 37.0316] }, period: 'Medieval', entryFee: 350, openingHours: '08:30 - 18:00', address: 'Bodrum/Muğla', images: [] },
+  { name: 'Afrodisias Antik Kenti', description: 'Antik çağın en ünlü heykeltıraşlık okullarından birine sahip, Roma dönemi kenti.', category: 'ruins', city: 'Aydın', location: { type: 'Point', coordinates: [28.7230, 37.7088] }, period: 'Roman', entryFee: 200, openingHours: '08:30 - 18:30', address: 'Karacasu/Aydın', images: [] },
+  { name: 'Agora Ören Yeri', description: 'İzmir\'in kalbinde yer alan, antik Roma dönemi çarşısı ve toplanma alanı.', category: 'ruins', city: 'İzmir', location: { type: 'Point', coordinates: [27.1378, 38.4173] }, period: 'Roman', entryFee: 130, openingHours: '08:30 - 17:30', address: 'Namazgah, İzmir', images: [] },
 ];
 
 const seedDB = async () => {
