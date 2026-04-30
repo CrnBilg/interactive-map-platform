@@ -6,7 +6,7 @@ import { useSocket } from '../context/SocketContext'
 import { useAuth } from '../context/AuthContext'
 import { useRoute } from '../context/RouteContext'
 import { Link } from 'react-router-dom'
-import { Search, Filter, Zap, MapPin, Star, X, Plus, Clock, Navigation, Trash2, Car, Footprints } from 'lucide-react'
+import { Search, Filter, Zap, MapPin, Star, X, Plus, Clock, Navigation, Trash2, Car, Footprints, Cloud, Sun, CloudRain, CloudLightning, CloudSnow, Wind } from 'lucide-react'
 import EventForm from '../components/EventForm'
 import PanoramaModal from '../components/PanoramaModal'
 import { has360Imagery } from '../utils/place360'
@@ -46,6 +46,18 @@ function MapController({ center, zoom }) {
 const categoryOptions = ['all', 'historical', 'museum', 'mosque', 'castle', 'ruins', 'monument', 'cultural']
 const categoryLabels = { all: 'Tümü', historical: 'Tarihi', museum: 'Müze', mosque: 'Cami', castle: 'Kale', ruins: 'Harabe', monument: 'Anıt', cultural: 'Kültürel' }
 
+const getWeatherIcon = (code) => {
+  if (code === 0) return <Sun size={14} className="text-amber-400" />
+  if (code >= 1 && code <= 3) return <Cloud size={14} className="text-stone-400" />
+  if (code >= 51 && code <= 67) return <CloudRain size={14} className="text-blue-400" />
+  if (code >= 71 && code <= 77) return <CloudSnow size={14} className="text-stone-100" />
+  if (code >= 80 && code <= 82) return <CloudRain size={14} className="text-blue-500" />
+  if (code >= 95) return <CloudLightning size={14} className="text-purple-400" />
+  return <Wind size={14} className="text-stone-500" />
+}
+
+const isRainy = (code) => (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95
+
 const formatDistance = (m) => {
   if (m < 1000) return `${Math.round(m)} m`
   return `${(m / 1000).toFixed(1)} km`
@@ -80,10 +92,31 @@ export default function MapPage() {
   const [walkingSummary, setWalkingSummary] = useState(null)
   const [routePolyline, setRoutePolyline] = useState([])
   const [walkingPolyline, setWalkingPolyline] = useState([])
+  const [weather, setWeather] = useState(null)
 
   useEffect(() => {
     citiesAPI.getAll().then(res => setCities(res.data))
   }, [])
+
+  // Fetch Weather
+  useEffect(() => {
+    if (!selectedCity) {
+      setWeather(null)
+      return
+    }
+
+    const fetchWeather = async () => {
+      try {
+        const [lng, lat] = selectedCity.location.coordinates
+        const res = await axios.get(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`)
+        setWeather(res.data.current_weather)
+      } catch (err) {
+        console.error('Weather fetch error:', err)
+      }
+    }
+
+    fetchWeather()
+  }, [selectedCity])
 
   // Fetch both driving and walking route summaries and geometries from OpenRouteService API
   useEffect(() => {
@@ -176,11 +209,11 @@ export default function MapPage() {
   return (
     <div className="h-[calc(100vh-64px)] flex">
       {/* Sidebar */}
-      <div className="w-80 shrink-0 bg-stone-900 border-r border-stone-800 flex flex-col overflow-y-auto overflow-x-hidden">
+      <div className="w-80 shrink-0 bg-white dark:bg-stone-900 border-r border-stone-200 dark:border-stone-800 flex flex-col overflow-y-auto overflow-x-hidden transition-colors duration-300">
         {/* Search */}
-        <div className="p-3 border-b border-stone-800">
+        <div className="p-3 border-b border-stone-200 dark:border-stone-800">
           <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500" />
             <input
               className="input pl-9 text-sm py-2"
               placeholder="Mekan ara..."
@@ -191,44 +224,71 @@ export default function MapPage() {
         </div>
 
         {/* Cities */}
-        <div className="p-3 border-b border-stone-800 overflow-y-auto max-h-60">
-          <div className="text-xs font-medium text-stone-500 mb-2 uppercase tracking-wider">Şehir Seç</div>
-          <div className="flex flex-wrap gap-1.5">
+        <div className="p-3 border-b border-stone-200 dark:border-stone-800">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wider">Şehir Seç</div>
+            {weather && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-stone-100 dark:bg-stone-800 rounded-full border border-stone-200 dark:border-stone-700 transition-colors">
+                {getWeatherIcon(weather.weathercode)}
+                <span className="text-[11px] font-bold text-stone-700 dark:text-stone-200">{Math.round(weather.temperature)}°C</span>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
             <button
               onClick={() => { setSelectedCity(null); setMapCenter([39.1, 35.0]); setMapZoom(6) }}
-              className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${!selectedCity ? 'bg-amber-500 text-stone-950 font-semibold' : 'bg-stone-800 text-stone-400 hover:text-stone-200'}`}
+              className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${!selectedCity ? 'bg-amber-500 text-stone-950 font-semibold shadow-sm' : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}`}
             >Tüm Türkiye</button>
             {cities.map(city => (
               <button
                 key={city._id}
                 onClick={() => handleCitySelect(city)}
-                className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${selectedCity?._id === city._id ? 'bg-amber-500 text-stone-950 font-semibold' : 'bg-stone-800 text-stone-400 hover:text-stone-200'}`}
+                className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${selectedCity?._id === city._id ? 'bg-amber-500 text-stone-950 font-semibold shadow-sm' : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}`}
               >{city.name}</button>
             ))}
           </div>
         </div>
 
+        {/* Weather Suggestion */}
+        {weather && isRainy(weather.weathercode) && (
+          <div className="p-3 bg-blue-500/5 dark:bg-blue-500/10 border-b border-blue-200 dark:border-blue-500/20 transition-colors">
+            <button 
+              onClick={() => setSelectedCategory('museum')}
+              className="w-full flex items-center justify-between p-2 bg-blue-500/10 dark:bg-blue-500/20 hover:bg-blue-500/20 dark:hover:bg-blue-500/30 border border-blue-200 dark:border-blue-500/30 rounded-xl transition-all group"
+            >
+              <div className="flex items-center gap-2">
+                <CloudRain size={16} className="text-blue-500 dark:text-blue-400 animate-bounce" />
+                <div className="text-left">
+                  <div className="text-[11px] font-bold text-blue-600 dark:text-blue-400 leading-none">Yağmurlu Hava Önerisi</div>
+                  <div className="text-[10px] text-blue-500/70 dark:text-blue-300/70 mt-0.5">Kapalı mekanları keşfet</div>
+                </div>
+              </div>
+              <Plus size={14} className="text-blue-500 dark:text-blue-400 group-hover:rotate-90 transition-transform" />
+            </button>
+          </div>
+        )}
+
         {/* Layer toggles */}
-        <div className="p-3 border-b border-stone-800 flex gap-2">
+        <div className="p-3 border-b border-stone-200 dark:border-stone-800 flex gap-2">
           <button
             onClick={() => setShowPlaces(!showPlaces)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors flex-1 justify-center ${showPlaces ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-stone-800 text-stone-500'}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors flex-1 justify-center ${showPlaces ? 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30' : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'}`}
           >🏛️ Mekanlar ({places.length})</button>
           <button
             onClick={() => setShowEvents(!showEvents)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors flex-1 justify-center ${showEvents ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-stone-800 text-stone-500'}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors flex-1 justify-center ${showEvents ? 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30' : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'}`}
           >⚡ Canlı ({liveEvents.length})</button>
         </div>
 
         {/* Route Section */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-stone-950/30">
-          <div className="p-3 border-b border-stone-800 flex items-center justify-between bg-stone-900/50">
-            <div className="text-xs font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+        <div className="flex-1 flex flex-col overflow-hidden bg-stone-50/50 dark:bg-stone-950/30">
+          <div className="p-3 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between bg-white dark:bg-stone-900/50">
+            <div className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2">
               <Navigation size={14} />
               Gezi Rotam ({routePlaces.length})
             </div>
             {routePlaces.length > 0 && (
-              <button onClick={clearRoute} className="text-stone-500 hover:text-red-400 transition-colors">
+              <button onClick={clearRoute} className="text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
                 <Trash2 size={14} />
               </button>
             )}
@@ -237,27 +297,27 @@ export default function MapPage() {
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {routePlaces.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                <div className="w-12 h-12 bg-stone-800 rounded-full flex items-center justify-center mb-3 text-stone-600">
+                <div className="w-12 h-12 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mb-3 text-stone-300 dark:text-stone-600">
                   <Navigation size={20} />
                 </div>
-                <p className="text-stone-500 text-xs leading-relaxed">
+                <p className="text-stone-400 dark:text-stone-500 text-xs leading-relaxed">
                   Henüz rota oluşturulmadı.<br/>Haritadan mekan seçip "Rotaya Ekle" butonuna basarak başlayın.
                 </p>
               </div>
             ) : (
               <>
                 {routePlaces.map((place, index) => (
-                  <div key={place._id} className="group relative flex items-center gap-3 p-2 bg-stone-800/50 hover:bg-stone-800 rounded-xl border border-stone-700/50 transition-all">
+                  <div key={place._id} className="group relative flex items-center gap-3 p-2 bg-white dark:bg-stone-800/50 hover:bg-stone-50 dark:hover:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700/50 transition-all">
                     <div className="w-6 h-6 shrink-0 bg-amber-500 text-stone-950 rounded-full flex items-center justify-center text-[10px] font-bold">
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-stone-200 truncate">{place.name}</div>
-                      <div className="text-[10px] text-stone-500">{place.city}</div>
+                      <div className="text-sm font-medium text-stone-800 dark:text-stone-200 truncate">{place.name}</div>
+                      <div className="text-[10px] text-stone-400 dark:text-stone-500">{place.city}</div>
                     </div>
                     <button 
                       onClick={() => removeFromRoute(place._id)}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 text-stone-500 hover:text-red-400 transition-all"
+                      className="opacity-0 group-hover:opacity-100 p-1.5 text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-all"
                     >
                       <X size={14} />
                     </button>
@@ -265,30 +325,30 @@ export default function MapPage() {
                 ))}
 
                 {routeSummary && routePlaces.length >= 2 && (
-                  <div className="mt-4 p-3 bg-stone-900 border border-stone-800 rounded-xl space-y-3 animate-fade-in shadow-inner">
+                  <div className="mt-4 p-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl space-y-3 animate-fade-in shadow-inner">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-stone-400">
+                      <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
                         <Car size={14} className="text-amber-500" />
                         <span className="text-xs">Sürüş</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm font-bold text-amber-500">{formatTime(routeSummary.time)}</div>
-                        <div className="text-[10px] text-stone-600 font-mono">{formatDistance(routeSummary.distance)}</div>
+                        <div className="text-sm font-bold text-amber-600 dark:text-amber-500">{formatTime(routeSummary.time)}</div>
+                        <div className="text-[10px] text-stone-400 dark:text-stone-600 font-mono">{formatDistance(routeSummary.distance)}</div>
                       </div>
                     </div>
 
-                    <div className="h-px bg-stone-800" />
+                    <div className="h-px bg-stone-100 dark:bg-stone-800" />
 
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-stone-400">
+                      <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
                         <Footprints size={14} className="text-emerald-500" />
                         <span className="text-xs">Yürüyüş</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm font-bold text-emerald-500">
+                        <div className="text-sm font-bold text-emerald-600 dark:text-emerald-500">
                           {walkingSummary ? formatTime(walkingSummary.time) : '...'}
                         </div>
-                        <div className="text-[10px] text-stone-600 font-mono">
+                        <div className="text-[10px] text-stone-400 dark:text-stone-600 font-mono">
                           {walkingSummary ? formatDistance(walkingSummary.distance) : '...'}
                         </div>
                       </div>
