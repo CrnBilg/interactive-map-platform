@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
+
 @layer base {
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -54,6 +56,11 @@
   color: #78716c !important;
 }
 .leaflet-control-attribution a { color: #a78bfa !important; }
+
+/* Hide routing machine itinerary */
+.leaflet-routing-container {
+  display: none !important;
+}
 
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 6px; }
