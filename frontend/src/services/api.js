@@ -41,4 +41,9 @@ export const authAPI = {
   savePlace: (placeId) => api.post(`/auth/save-place/${placeId}`),
 }
 
+// Chat
+export const chatAPI = {
+  send: (messages) => api.post('/chat', { messages }),
+}
+
 export default api

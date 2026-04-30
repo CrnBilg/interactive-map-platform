@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
-
 @layer base {
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
