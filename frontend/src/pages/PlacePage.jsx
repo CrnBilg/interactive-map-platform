@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { placesAPI, reviewsAPI, authAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext'
-import { MapPin, Star, Clock, DollarSign, Globe, Bookmark, BookmarkCheck, Trash2, ArrowLeft, Eye } from 'lucide-react'
+import { useRoute } from '../context/RouteContext'
+import { MapPin, Star, Clock, DollarSign, Globe, Bookmark, BookmarkCheck, Trash2, ArrowLeft, Eye, Navigation } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PanoramaModal from '../components/PanoramaModal'
 import { has360Imagery } from '../utils/place360'
@@ -13,6 +14,7 @@ const categoryEmoji = { historical: '🏛️', museum: '🏺', mosque: '🕌', c
 export default function PlacePage() {
   const { id } = useParams()
   const { user } = useAuth()
+  const { addToRoute, routePlaces } = useRoute()
   const navigate = useNavigate()
   const [place, setPlace] = useState(null)
   const [reviews, setReviews] = useState([])
@@ -77,6 +79,7 @@ export default function PlacePage() {
   if (!place) return <div className="text-center py-20 text-stone-500">Mekan bulunamadı</div>
 
   const has360 = has360Imagery(place)
+  const isInRoute = routePlaces.some(p => p._id === place._id)
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
@@ -99,6 +102,16 @@ export default function PlacePage() {
           >
             <Eye size={15} /> {has360 ? '360 View' : '360 view not available yet'}
           </button>
+          
+          <button 
+            onClick={() => addToRoute(place)}
+            disabled={isInRoute}
+            className={`p-2.5 rounded-xl backdrop-blur-sm border transition-all ${isInRoute ? 'bg-emerald-500/90 border-emerald-400 text-stone-950' : 'bg-stone-900/80 border-stone-700 text-stone-300 hover:text-emerald-400'}`}
+            title={isInRoute ? "Rotanızda" : "Rotaya Ekle"}
+          >
+            <Navigation size={18} fill={isInRoute ? "currentColor" : "none"} />
+          </button>
+
           <button onClick={handleSave} className={`p-2.5 rounded-xl backdrop-blur-sm border transition-all ${saved ? 'bg-amber-500/90 border-amber-400 text-stone-950' : 'bg-stone-900/80 border-stone-700 text-stone-300 hover:text-amber-400'}`}>
             {saved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
           </button>

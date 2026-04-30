@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import { placesAPI, eventsAPI, citiesAPI } from '../services/api'
 import { useSocket } from '../context/SocketContext'
 import { useAuth } from '../context/AuthContext'
+import { useRoute } from '../context/RouteContext'
 import { Link } from 'react-router-dom'
-import { Search, Filter, Zap, MapPin, Star, X, Plus, Clock } from 'lucide-react'
+import { Search, Filter, Zap, MapPin, Star, X, Plus, Clock, Navigation, Trash2, Car, Footprints } from 'lucide-react'
 import EventForm from '../components/EventForm'
 import PanoramaModal from '../components/PanoramaModal'
 import { has360Imagery } from '../utils/place360'
+import axios from 'axios'
 import toast from 'react-hot-toast'
 import { formatDistanceToNow } from 'date-fns'
 import { tr } from 'date-fns/locale'
@@ -44,9 +46,24 @@ function MapController({ center, zoom }) {
 const categoryOptions = ['all', 'historical', 'museum', 'mosque', 'castle', 'ruins', 'monument', 'cultural']
 const categoryLabels = { all: 'Tümü', historical: 'Tarihi', museum: 'Müze', mosque: 'Cami', castle: 'Kale', ruins: 'Harabe', monument: 'Anıt', cultural: 'Kültürel' }
 
+const formatDistance = (m) => {
+  if (m < 1000) return `${Math.round(m)} m`
+  return `${(m / 1000).toFixed(1)} km`
+}
+
+const formatTime = (s) => {
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  if (h > 0) return `${h} sa ${m} dk`
+  return `${m} dk`
+}
+
+const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
+
 export default function MapPage() {
   const { user } = useAuth()
   const { liveEvents, setLiveEvents, joinCity, leaveCity } = useSocket()
+  const { routePlaces, addToRoute, removeFromRoute, clearRoute } = useRoute()
   const [places, setPlaces] = useState([])
   const [cities, setCities] = useState([])
   const [selectedCity, setSelectedCity] = useState(null)
@@ -59,10 +76,70 @@ export default function MapPage() {
   const [showEventForm, setShowEventForm] = useState(false)
   const [panoramaPlace, setPanoramaPlace] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [routeSummary, setRouteSummary] = useState(null)
+  const [walkingSummary, setWalkingSummary] = useState(null)
+  const [routePolyline, setRoutePolyline] = useState([])
+  const [walkingPolyline, setWalkingPolyline] = useState([])
 
   useEffect(() => {
     citiesAPI.getAll().then(res => setCities(res.data))
   }, [])
+
+  // Fetch both driving and walking route summaries and geometries from OpenRouteService API
+  useEffect(() => {
+    if (routePlaces.length < 2) {
+      setRouteSummary(null)
+      setWalkingSummary(null)
+      setRoutePolyline([])
+      setWalkingPolyline([])
+      return
+    }
+
+    const fetchRoutes = async () => {
+      const coordinates = routePlaces.map(p => [p.location.coordinates[0], p.location.coordinates[1]])
+      
+      const fetchORSRoute = async (profile) => {
+        try {
+          const response = await axios.post(`https://api.openrouteservice.org/v2/directions/${profile}/geojson`, {
+            coordinates: coordinates,
+            preference: 'shortest'
+          }, {
+            headers: {
+              'Authorization': ORS_API_KEY,
+              'Content-Type': 'application/json'
+            }
+          })
+          
+          if (response.data.features && response.data.features[0]) {
+            const feature = response.data.features[0]
+            const geometry = feature.geometry.coordinates.map(coord => [coord[1], coord[0]])
+
+            if (profile === 'driving-car') {
+              setRoutePolyline(geometry)
+            } else if (profile === 'foot-walking') {
+              setWalkingPolyline(geometry)
+            }
+
+            return {
+              distance: feature.properties.summary.distance,
+              time: feature.properties.summary.duration
+            }
+          }
+        } catch (err) {
+          console.error(`ORS ${profile} error:`, err)
+          return null
+        }
+      }
+
+      const driveData = await fetchORSRoute('driving-car')
+      if (driveData) setRouteSummary(driveData)
+
+      const walkData = await fetchORSRoute('foot-walking')
+      if (walkData) setWalkingSummary(walkData)
+    }
+
+    fetchRoutes()
+  }, [routePlaces])
 
   useEffect(() => {
     const params = {}
@@ -94,10 +171,12 @@ export default function MapPage() {
     toast.success('Etkinlik bildirildi! 🎉')
   }
 
+  const waypoints = routePlaces.map(p => [p.location.coordinates[1], p.location.coordinates[0]])
+
   return (
     <div className="h-[calc(100vh-64px)] flex">
       {/* Sidebar */}
-      <div className="w-80 shrink-0 bg-stone-900 border-r border-stone-800 flex flex-col overflow-hidden">
+      <div className="w-80 shrink-0 bg-stone-900 border-r border-stone-800 flex flex-col overflow-y-auto overflow-x-hidden">
         {/* Search */}
         <div className="p-3 border-b border-stone-800">
           <div className="relative">
@@ -112,7 +191,7 @@ export default function MapPage() {
         </div>
 
         {/* Cities */}
-        <div className="p-3 border-b border-stone-800">
+        <div className="p-3 border-b border-stone-800 overflow-y-auto max-h-60">
           <div className="text-xs font-medium text-stone-500 mb-2 uppercase tracking-wider">Şehir Seç</div>
           <div className="flex flex-wrap gap-1.5">
             <button
@@ -129,20 +208,6 @@ export default function MapPage() {
           </div>
         </div>
 
-        {/* Categories */}
-        <div className="p-3 border-b border-stone-800">
-          <div className="text-xs font-medium text-stone-500 mb-2 uppercase tracking-wider">Kategori</div>
-          <div className="flex flex-wrap gap-1.5">
-            {categoryOptions.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${selectedCategory === cat ? 'bg-amber-500 text-stone-950 font-semibold' : 'bg-stone-800 text-stone-400 hover:text-stone-200'}`}
-              >{categoryLabels[cat]}</button>
-            ))}
-          </div>
-        </div>
-
         {/* Layer toggles */}
         <div className="p-3 border-b border-stone-800 flex gap-2">
           <button
@@ -155,48 +220,84 @@ export default function MapPage() {
           >⚡ Canlı ({liveEvents.length})</button>
         </div>
 
-        {/* Live events list */}
-        <div className="flex-1 overflow-y-auto">
-          {liveEvents.length > 0 && showEvents && (
-            <div className="p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-xs font-medium text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="live-dot w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-                  Canlı Etkinlikler
+        {/* Route Section */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-stone-950/30">
+          <div className="p-3 border-b border-stone-800 flex items-center justify-between bg-stone-900/50">
+            <div className="text-xs font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+              <Navigation size={14} />
+              Gezi Rotam ({routePlaces.length})
+            </div>
+            {routePlaces.length > 0 && (
+              <button onClick={clearRoute} className="text-stone-500 hover:text-red-400 transition-colors">
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            {routePlaces.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                <div className="w-12 h-12 bg-stone-800 rounded-full flex items-center justify-center mb-3 text-stone-600">
+                  <Navigation size={20} />
                 </div>
-                {user && (
-                  <button onClick={() => setShowEventForm(true)} className="flex items-center gap-1 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs hover:bg-emerald-500/20 transition-colors">
-                    <Plus size={11} /> Bildir
-                  </button>
-                )}
+                <p className="text-stone-500 text-xs leading-relaxed">
+                  Henüz rota oluşturulmadı.<br/>Haritadan mekan seçip "Rotaya Ekle" butonuna basarak başlayın.
+                </p>
               </div>
-              <div className="space-y-2">
-                {liveEvents.map(event => (
-                  <div key={event._id} className="p-2.5 bg-stone-800 rounded-xl border border-emerald-500/10">
-                    <div className="flex items-start gap-2">
-                      <span className="text-lg">{eventIcons[event.type] || '⚡'}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-stone-100 text-sm truncate">{event.title}</div>
-                        <div className="text-stone-500 text-xs">{event.address || event.city}</div>
-                        <div className="flex items-center gap-1 text-stone-600 text-xs mt-0.5">
-                          <Clock size={10} />
-                          {formatDistanceToNow(new Date(event.createdAt), { addSuffix: true, locale: tr })}
+            ) : (
+              <>
+                {routePlaces.map((place, index) => (
+                  <div key={place._id} className="group relative flex items-center gap-3 p-2 bg-stone-800/50 hover:bg-stone-800 rounded-xl border border-stone-700/50 transition-all">
+                    <div className="w-6 h-6 shrink-0 bg-amber-500 text-stone-950 rounded-full flex items-center justify-center text-[10px] font-bold">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-stone-200 truncate">{place.name}</div>
+                      <div className="text-[10px] text-stone-500">{place.city}</div>
+                    </div>
+                    <button 
+                      onClick={() => removeFromRoute(place._id)}
+                      className="opacity-0 group-hover:opacity-100 p-1.5 text-stone-500 hover:text-red-400 transition-all"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+
+                {routeSummary && routePlaces.length >= 2 && (
+                  <div className="mt-4 p-3 bg-stone-900 border border-stone-800 rounded-xl space-y-3 animate-fade-in shadow-inner">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-stone-400">
+                        <Car size={14} className="text-amber-500" />
+                        <span className="text-xs">Sürüş</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-amber-500">{formatTime(routeSummary.time)}</div>
+                        <div className="text-[10px] text-stone-600 font-mono">{formatDistance(routeSummary.distance)}</div>
+                      </div>
+                    </div>
+
+                    <div className="h-px bg-stone-800" />
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-stone-400">
+                        <Footprints size={14} className="text-emerald-500" />
+                        <span className="text-xs">Yürüyüş</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-emerald-500">
+                          {walkingSummary ? formatTime(walkingSummary.time) : '...'}
+                        </div>
+                        <div className="text-[10px] text-stone-600 font-mono">
+                          {walkingSummary ? formatDistance(walkingSummary.distance) : '...'}
                         </div>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {liveEvents.length === 0 && selectedCity && (
-            <div className="p-4 text-center text-stone-600 text-sm">
-              <Zap size={24} className="mx-auto mb-2 opacity-30" />
-              <p>Bu şehirde şu an aktif etkinlik yok.</p>
-              {user && <button onClick={() => setShowEventForm(true)} className="text-amber-400 hover:text-amber-300 mt-1 text-xs">İlk bildiren sen ol!</button>}
-            </div>
-          )}
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -214,6 +315,45 @@ export default function MapPage() {
           />
           <MapController center={mapCenter} zoom={mapZoom} />
 
+          {/* Driving Route (with outline for prominence) */}
+          {routePolyline.length > 0 && (
+            <>
+              <Polyline 
+                positions={routePolyline}
+                pathOptions={{ color: '#000', weight: 10, opacity: 0.3, lineJoin: 'round' }} 
+              />
+              <Polyline 
+                positions={routePolyline}
+                pathOptions={{ 
+                  color: '#f59e0b', 
+                  weight: 6, 
+                  opacity: 1,
+                  lineJoin: 'round'
+                }} 
+              />
+            </>
+          )}
+
+          {/* Walking Route (with outline for prominence) */}
+          {walkingPolyline.length > 0 && (
+            <>
+              <Polyline 
+                positions={walkingPolyline}
+                pathOptions={{ color: '#000', weight: 8, opacity: 0.3, lineJoin: 'round' }} 
+              />
+              <Polyline 
+                positions={walkingPolyline}
+                pathOptions={{ 
+                  color: '#10b981', 
+                  weight: 4, 
+                  opacity: 1,
+                  dashArray: '2, 10',
+                  lineJoin: 'round'
+                }} 
+              />
+            </>
+          )}
+
           {/* Place markers */}
           {showPlaces && places.map(place => (
             <Marker
@@ -224,17 +364,28 @@ export default function MapPage() {
               <Popup>
                 <div className="min-w-[200px]">
                   <div className="font-semibold text-stone-100 text-sm mb-1">{place.name}</div>
-                  <div className="text-stone-400 text-xs mb-2 line-clamp-2">{place.description}</div>
-                  {has360Imagery(place) ? (
+                  <div className="text-stone-400 text-xs mb-3 line-clamp-2">{place.description}</div>
+                  
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setPanoramaPlace(place)}
-                      className="text-amber-400 text-xs hover:underline flex items-center gap-1"
+                      onClick={() => addToRoute(place)}
+                      className="flex-1 bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1"
                     >
-                      360 View →
+                      <Plus size={12} /> Rotaya Ekle
                     </button>
-                  ) : (
-                    <div className="text-stone-500 text-xs">360 view not available yet</div>
-                  )}
+                    {has360Imagery(place) && (
+                      <button
+                        onClick={() => setPanoramaPlace(place)}
+                        className="bg-stone-800 hover:bg-stone-700 text-stone-200 p-1.5 rounded-lg transition-colors"
+                        title="360 View"
+                      >
+                        <Zap size={14} />
+                      </button>
+                    )}
+                  </div>
+                  <Link to={`/place/${place._id}`} className="block text-center text-stone-500 text-[10px] mt-2 hover:text-stone-300 transition-colors">
+                    Detayları Görüntüle →
+                  </Link>
                 </div>
               </Popup>
             </Marker>
