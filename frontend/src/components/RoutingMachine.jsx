@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import L from "leaflet";
 import "leaflet-routing-machine";
+import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import { useMap } from "react-leaflet";
 
 const RoutingMachine = ({ waypoints, onRouteFound }) => {

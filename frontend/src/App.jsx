@@ -14,6 +14,7 @@ import RegisterPage from './pages/RegisterPage'
 import ProfilePage from './pages/ProfilePage'
 import AddPlacePage from './pages/AddPlacePage'
 import AdminPage from './pages/AdminPage'
+import ChatbotWidget from './components/ChatbotWidget'
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
               <Route path="/add-place" element={<AddPlacePage />} />
               <Route path="/admin" element={<AdminPage />} />
             </Routes>
+            <ChatbotWidget />
           </div>
           <Toaster
             position="bottom-right"

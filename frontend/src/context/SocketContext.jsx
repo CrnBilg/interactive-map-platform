@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { io } from 'socket.io-client'
 
 const SocketContext = createContext(null)
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000'
 
 export const SocketProvider = ({ children }) => {
   const socketRef = useRef(null)
@@ -9,7 +10,7 @@ export const SocketProvider = ({ children }) => {
   const [liveEvents, setLiveEvents] = useState([])
 
   useEffect(() => {
-    socketRef.current = io('/', { transports: ['websocket'] })
+    socketRef.current = io(SOCKET_URL, { transports: ['websocket'] })
 
     socketRef.current.on('connect', () => setIsConnected(true))
     socketRef.current.on('disconnect', () => setIsConnected(false))

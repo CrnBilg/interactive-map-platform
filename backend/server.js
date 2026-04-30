@@ -28,6 +28,7 @@ app.use('/api/places', require('./routes/places'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/cities', require('./routes/cities'));
+app.use('/api/chat', require('./routes/chat'));
 
 // Health check
 app.get('/', (req, res) => res.json({ message: 'CityLore API running 🏛️' }));

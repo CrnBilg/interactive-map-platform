@@ -29,6 +29,8 @@ Required external service: MongoDB. MongoDB Atlas free M0 is enough for local de
 
 Maps are free by default: the project uses Leaflet + OpenStreetMap, so no Google Maps API key is needed.
 
+The chatbot is optional. If you want to enable it, add an OpenRouter API key to `backend/.env` as `OPENROUTER_API_KEY`.
+
 ### 1. Backend
 
 ```bash
@@ -79,6 +81,21 @@ To enable Google Maps Embed Street View, create a Google Maps Embed API key and 
 ```env
 VITE_GOOGLE_MAPS_EMBED_API_KEY=your_google_maps_embed_key_here
 ```
+
+## Chatbot
+
+CityLore includes an optional floating chatbot for place recommendations, historical questions, and app help.
+
+The browser never receives the AI API key. The frontend calls `/api/chat`, and the backend sends the request to OpenRouter.
+
+To enable it, add this to `backend/.env`:
+
+```env
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+OPENROUTER_MODEL=openai/gpt-4o-mini
+```
+
+Use an OpenRouter key for `OPENROUTER_API_KEY`. Do not use a GitHub token here, and do not put chatbot keys in `frontend/.env`.
 
 ## Project Structure
 
@@ -134,6 +151,11 @@ citylore/
 | GET | /api/reviews/place/:id | Mekan yorumları |
 | POST | /api/reviews/place/:id | Yorum ekle |
 | DELETE | /api/reviews/:id | Yorum sil |
+
+### Chat
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /api/chat | CityLore chatbot response |
 
 ## WebSocket Events
 
