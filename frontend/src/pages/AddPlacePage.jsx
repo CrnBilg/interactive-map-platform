@@ -16,6 +16,7 @@ export default function AddPlacePage() {
     lat: '', lng: '', address: '', period: '', entryFee: 0,
     openingHours: '', website: '', images: '',
     panoramaUrl: '', panoramaxImageId: '', streetViewUrl: '',
+    streetViewPanoId: '', streetViewHeading: '', streetViewPitch: '', streetViewFov: '', streetViewRadius: '',
   })
   const [loading, setLoading] = useState(false)
 
@@ -32,6 +33,13 @@ export default function AddPlacePage() {
         panoramaUrl: form.panoramaUrl.trim(),
         panoramaxImageId: form.panoramaxImageId.trim(),
         streetViewUrl: form.streetViewUrl.trim(),
+        streetView: {
+          panoId: form.streetViewPanoId.trim(),
+          heading: form.streetViewHeading,
+          pitch: form.streetViewPitch,
+          fov: form.streetViewFov,
+          radius: form.streetViewRadius,
+        },
       }
       const { data } = await placesAPI.create(payload)
       toast.success('Mekan eklendi!')
@@ -138,6 +146,33 @@ export default function AddPlacePage() {
           <div>
             <label className="block text-stone-400 text-sm mb-1.5">Street-level viewer URL</label>
             <input className="input" type="url" placeholder="https://..." value={form.streetViewUrl} onChange={e => set('streetViewUrl', e.target.value)} />
+          </div>
+          <div className="border-t border-stone-800 pt-4 space-y-4">
+            <p className="text-stone-500 text-xs leading-relaxed">
+              Optional Google camera settings. Use these when the default panorama opens facing away from the place.
+            </p>
+            <div>
+              <label className="block text-stone-400 text-sm mb-1.5">Google Panorama ID</label>
+              <input className="input font-mono text-xs" placeholder="Exact pano ID, if known" value={form.streetViewPanoId} onChange={e => set('streetViewPanoId', e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label className="block text-stone-400 text-sm mb-1.5">Heading</label>
+                <input className="input" type="number" step="any" placeholder="Auto" value={form.streetViewHeading} onChange={e => set('streetViewHeading', e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-stone-400 text-sm mb-1.5">Pitch</label>
+                <input className="input" type="number" step="any" placeholder="Auto" value={form.streetViewPitch} onChange={e => set('streetViewPitch', e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-stone-400 text-sm mb-1.5">FOV</label>
+                <input className="input" type="number" min={10} max={100} placeholder="90" value={form.streetViewFov} onChange={e => set('streetViewFov', e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-stone-400 text-sm mb-1.5">Radius</label>
+                <input className="input" type="number" min={0} placeholder="500" value={form.streetViewRadius} onChange={e => set('streetViewRadius', e.target.value)} />
+              </div>
+            </div>
           </div>
         </div>
 

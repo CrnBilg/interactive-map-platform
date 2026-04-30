@@ -31,7 +31,16 @@ export default function PanoramaModal({ place, onClose }) {
   const source = useMemo(() => getPrimary360Source(place), [place])
   const canUseGoogleEmbed = GOOGLE_EMBED_API_KEY && Number.isFinite(lat) && Number.isFinite(lng)
   const googleEmbedUrl = canUseGoogleEmbed
-    ? getGoogleStreetViewEmbedUrl({ apiKey: GOOGLE_EMBED_API_KEY, lat, lng })
+    ? getGoogleStreetViewEmbedUrl({
+        apiKey: GOOGLE_EMBED_API_KEY,
+        lat,
+        lng,
+        panoId: place?.streetView?.panoId,
+        heading: place?.streetView?.heading,
+        pitch: place?.streetView?.pitch,
+        fov: place?.streetView?.fov,
+        radius: place?.streetView?.radius,
+      })
     : null
   const fallbackMediaType = source?.type === 'panorama' ? mediaTypeFromUrl(source.value) : null
   const fallbackIframeUrl = source?.type === 'panoramax'

@@ -34,15 +34,28 @@ export function getPanoramaxUrl(imageId) {
   return `https://api.panoramax.xyz/#focus=pic&pic=${encodeURIComponent(imageId)}`
 }
 
-export function getGoogleStreetViewEmbedUrl({ apiKey, lat, lng, heading = 0, pitch = 0, fov = 80, radius = 500 }) {
+const hasUsefulCameraValue = value => Number.isFinite(Number(value)) && Number(value) !== 0
+
+export function getGoogleStreetViewEmbedUrl({
+  apiKey,
+  lat,
+  lng,
+  panoId,
+  heading,
+  pitch,
+  fov,
+  radius = 500,
+}) {
   const params = new URLSearchParams({
     key: apiKey,
     location: `${lat},${lng}`,
-    heading: String(heading),
-    pitch: String(pitch),
-    fov: String(fov),
     radius: String(radius),
   })
+
+  if (panoId) params.set('pano', panoId)
+  if (hasUsefulCameraValue(heading)) params.set('heading', String(Number(heading)))
+  if (hasUsefulCameraValue(pitch)) params.set('pitch', String(Number(pitch)))
+  if (Number.isFinite(Number(fov))) params.set('fov', String(Number(fov)))
 
   return `https://www.google.com/maps/embed/v1/streetview?${params.toString()}`
 }
