@@ -29,7 +29,7 @@ export default function PanoramaModal({ place, onClose }) {
   const lat = place?.location?.coordinates?.[1]
   const lng = place?.location?.coordinates?.[0]
   const source = useMemo(() => getPrimary360Source(place), [place])
-  const canUseGoogleEmbed = !source && place?.has360 && GOOGLE_EMBED_API_KEY && Number.isFinite(lat) && Number.isFinite(lng)
+  const canUseGoogleEmbed = GOOGLE_EMBED_API_KEY && Number.isFinite(lat) && Number.isFinite(lng)
   const googleEmbedUrl = canUseGoogleEmbed
     ? getGoogleStreetViewEmbedUrl({ apiKey: GOOGLE_EMBED_API_KEY, lat, lng })
     : null
@@ -43,7 +43,7 @@ export default function PanoramaModal({ place, onClose }) {
   useEffect(() => {
     setStatusMessage('')
 
-    if (!source && googleEmbedUrl) {
+    if (googleEmbedUrl) {
       setViewerMode('google')
     } else if (!source) {
       setStatusMessage('No verified 360 source exists for this place yet.')
