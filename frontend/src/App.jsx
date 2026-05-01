@@ -21,7 +21,7 @@ export default function App() {
     <AuthProvider>
       <SocketProvider>
         <RouteProvider>
-          <div className="min-h-screen bg-stone-950 text-stone-100 font-body">
+          <div className="min-h-screen bg-bg-deepest text-parchment font-body">
             <Navbar />
             <Routes>
               <Route path="/" element={<LandingPage />} />
@@ -40,7 +40,7 @@ export default function App() {
           <Toaster
             position="bottom-right"
             toastOptions={{
-              style: { background: '#1c1917', color: '#e7e5e4', border: '1px solid #44403c' },
+              className: 'border border-gold/25 bg-panel text-parchment',
             }}
           />
         </RouteProvider>
