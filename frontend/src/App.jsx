@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './context/AuthContext'
 import { SocketProvider } from './context/SocketContext'
@@ -18,13 +19,16 @@ import AdminPage from './pages/AdminPage'
 import ChatbotWidget from './components/ChatbotWidget'
 
 export default function App() {
+  const location = useLocation()
+  const hideNavbar = location.pathname === '/'
+
   return (
     <ThemeProvider>
       <AuthProvider>
         <SocketProvider>
           <RouteProvider>
             <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 font-body transition-colors duration-300">
-              <Navbar />
+              {!hideNavbar && <Navbar />}
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/explore" element={<HomePage />} />
