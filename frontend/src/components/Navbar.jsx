@@ -1,9 +1,10 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { LogOut, Menu, Plus, Shield, User, X, Sun, Moon, Wifi, WifiOff } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useSocket } from '../context/SocketContext'
 import { useTheme } from '../context/ThemeContext'
-import { Map, Landmark, Plus, User, LogOut, Shield, Wifi, WifiOff, Menu, X, Sun, Moon } from 'lucide-react'
-import { useState } from 'react'
+import { MapGlyph, MuseumIcon } from './visuals/Ornaments'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
@@ -13,102 +14,107 @@ export default function Navbar() {
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
 
-  const handleLogout = () => { logout(); navigate('/') }
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
+
   const isActive = (path) => location.pathname === path
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/90 dark:bg-stone-950/90 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
-              <Landmark size={16} className="text-stone-950" />
-            </div>
-            <span className="font-display text-xl font-bold text-stone-900 dark:text-stone-100">CityLore</span>
+    <nav className="sticky top-0 z-50 h-[72px] border-b border-gold/15 bg-gradient-to-b from-bg-black via-bg-black/92 to-bg-black/55 backdrop-blur-xl">
+      <div className="mx-auto flex h-full max-w-[1500px] items-center justify-between px-4 sm:px-8 lg:px-16">
+        <Link to="/" className="flex items-center gap-3 text-gold-bright">
+          <MuseumIcon className="h-7 w-7 text-gold" />
+          <span className="font-display text-[22px] font-bold">CityLore</span>
+        </Link>
+
+        <div className="absolute left-1/2 hidden -translate-x-1/2 md:block">
+          <Link
+            to="/map"
+            className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+              isActive('/map')
+                ? 'border-gold bg-gold-deep/55 text-gold-bright'
+                : 'border-gold/50 bg-gold-deep/40 text-gold-bright hover:border-gold'
+            }`}
+          >
+            <MapGlyph className="h-4 w-4" />
+            Harita
           </Link>
-
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
-            <Link to="/map" className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors ${isActive('/map') ? 'bg-stone-100 dark:bg-stone-800 text-amber-600 dark:text-amber-400 font-semibold' : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800/50'}`}>
-              <Map size={15} /> Harita
-            </Link>
-            {user && (
-              <Link to="/add-place" className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors ${isActive('/add-place') ? 'bg-stone-100 dark:bg-stone-800 text-amber-600 dark:text-amber-400 font-semibold' : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800/50'}`}>
-                <Plus size={15} /> Yer Ekle
-              </Link>
-            )}
-            {user?.role === 'admin' && (
-              <Link to="/admin" className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors ${isActive('/admin') ? 'bg-stone-100 dark:bg-stone-800 text-amber-600 dark:text-amber-400 font-semibold' : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800/50'}`}>
-                <Shield size={15} /> Admin
-              </Link>
-            )}
-          </div>
-
-          {/* Right side */}
-          <div className="hidden md:flex items-center gap-3">
-            {/* Theme Toggle */}
-            <button 
-              onClick={toggleTheme}
-              className="p-2 rounded-lg text-stone-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all active:scale-90"
-              title={theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}
-            >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-
-            {/* Live indicator */}
-            <div className={`flex items-center gap-1.5 text-xs ${isConnected ? 'text-emerald-500 dark:text-emerald-400' : 'text-stone-400 dark:text-stone-600'}`}>
-              {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
-              <span>{isConnected ? 'Canlı' : 'Bağlantı yok'}</span>
-            </div>
-
-            {user ? (
-              <div className="flex items-center gap-2">
-                <Link to="/profile" className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors text-sm font-medium text-stone-700 dark:text-stone-200">
-                  <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-stone-950 font-bold text-xs">
-                    {user.username?.[0]?.toUpperCase()}
-                  </div>
-                  <span>{user.username}</span>
-                </Link>
-                <button onClick={handleLogout} className="p-2 rounded-lg text-stone-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors">
-                  <LogOut size={16} />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link to="/login" className="btn-secondary text-sm py-1.5 px-4">Giriş</Link>
-                <Link to="/register" className="btn-primary text-sm py-1.5 px-4">Kayıt</Link>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="flex items-center gap-2 md:hidden">
-            <button onClick={toggleTheme} className="p-2 text-stone-500">
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
-            <button className="p-2 text-stone-500" onClick={() => setMenuOpen(!menuOpen)}>
-              {menuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-          </div>
         </div>
+
+        <div className="hidden items-center gap-3 md:flex">
+          <button
+            onClick={toggleTheme}
+            className="rounded-lg border border-gold/25 p-2 text-gold-bright transition hover:border-gold/60"
+            title={theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+
+          <div className="inline-flex items-center gap-2 rounded-full bg-gold/8 px-3 py-2 text-xs font-semibold text-gold/80">
+            {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
+            {isConnected ? 'Canlı' : 'Bağlantı yok'}
+          </div>
+
+          {user && (
+            <>
+              <Link to="/add-place" className="rounded-lg border border-gold/25 px-3 py-2 text-sm text-gold-bright/80 transition hover:border-gold/60">
+                <Plus size={15} />
+              </Link>
+              {user.role === 'admin' && (
+                <Link to="/admin" className="rounded-lg border border-gold/25 px-3 py-2 text-sm text-gold-bright/80 transition hover:border-gold/60">
+                  <Shield size={15} />
+                </Link>
+              )}
+            </>
+          )}
+
+          {user ? (
+            <div className="flex items-center gap-2">
+              <Link to="/profile" className="inline-flex items-center gap-2 rounded-full border border-gold/35 bg-bg-black/80 px-3 py-2 text-sm text-gold-bright">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full border border-gold/45 text-xs font-bold">
+                  {user.username?.[0]?.toUpperCase()}
+                </span>
+                <span className="max-w-[90px] truncate">{user.username}</span>
+              </Link>
+              <button onClick={handleLogout} className="rounded-lg border border-gold/20 p-2 text-gold/70 transition hover:text-ember">
+                <LogOut size={16} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link to="/login" className="rounded-lg border border-gold/45 bg-bg-black/40 px-5 py-2 text-sm font-semibold text-gold-bright transition hover:border-gold">
+                Giriş
+              </Link>
+              <Link to="/register" className="rounded-lg bg-ember px-5 py-2 text-sm font-semibold text-gold-bright transition">
+                Kayıt
+              </Link>
+            </>
+          )}
+        </div>
+
+        <button className="md:hidden rounded-lg border border-gold/25 p-2 text-gold-bright" onClick={() => setMenuOpen(!menuOpen)}>
+          {menuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
 
-      {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 px-4 py-3 space-y-1">
-          <Link to="/map" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 font-medium"><Map size={16} /> Harita</Link>
-          {user && <Link to="/add-place" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 font-medium"><Plus size={16} /> Yer Ekle</Link>}
-          {user?.role === 'admin' && <Link to="/admin" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 font-medium"><Shield size={16} /> Admin</Link>}
+        <div className="md:hidden border-t border-gold/15 bg-bg-black px-4 py-3">
+          <Link to="/map" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10">
+            <MapGlyph className="h-4 w-4" /> Harita
+          </Link>
+          {user && <Link to="/add-place" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10"><Plus size={16} /> Yer Ekle</Link>}
+          {user?.role === 'admin' && <Link to="/admin" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10"><Shield size={16} /> Admin</Link>}
           {user ? (
             <>
-              <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 font-medium"><User size={16} /> Profil</Link>
-              <button onClick={() => { handleLogout(); setMenuOpen(false) }} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-red-500 dark:text-red-400 hover:bg-stone-100 dark:hover:bg-stone-800 w-full font-medium"><LogOut size={16} /> Çıkış</button>
+              <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10"><User size={16} /> Profil</Link>
+              <button onClick={() => { handleLogout(); setMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-ember hover:bg-gold/10"><LogOut size={16} /> Çıkış</button>
             </>
           ) : (
-            <div className="flex gap-2 pt-1">
-              <Link to="/login" onClick={() => setMenuOpen(false)} className="btn-secondary flex-1 text-center text-sm">Giriş</Link>
-              <Link to="/register" onClick={() => setMenuOpen(false)} className="btn-primary flex-1 text-center text-sm">Kayıt</Link>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Link to="/login" onClick={() => setMenuOpen(false)} className="btn-secondary text-center text-sm">Giriş</Link>
+              <Link to="/register" onClick={() => setMenuOpen(false)} className="btn-primary text-center text-sm">Kayıt</Link>
             </div>
           )}
         </div>
