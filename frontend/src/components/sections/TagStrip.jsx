@@ -29,9 +29,6 @@ export default function TagStrip() {
           </span>
         ))}
       </div>
-      <div className="pointer-events-none absolute right-0 top-0 flex h-full w-28 items-center justify-end bg-gradient-to-l from-bg-warm-black via-bg-warm-black/85 to-transparent pr-5 text-gold-bright">
-        &gt;
-      </div>
     </section>
   )
 }
