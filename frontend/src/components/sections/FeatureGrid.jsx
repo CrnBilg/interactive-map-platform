@@ -90,7 +90,7 @@ function FeatureCard({ feature }) {
       </div>
       <h3 className="card-title-gold relative z-[2] text-3xl leading-none">{feature.title}</h3>
       <p className="relative z-[2] mx-auto mt-5 max-w-[230px] font-display text-lg italic leading-[1.7] text-parchment/80">{feature.text}</p>
-      <Link to="/map" className="relative z-[2] mt-8 inline-flex items-center gap-2 text-sm font-semibold text-gold-bright drop-shadow-[0_0_10px_hsl(var(--gold-bright)_/_0.32)] underline-offset-4 hover:underline">
+      <Link to={feature.href || '/map'} className="relative z-[2] mt-8 inline-flex items-center gap-2 text-sm font-semibold text-gold-bright drop-shadow-[0_0_10px_hsl(var(--gold-bright)_/_0.32)] underline-offset-4 hover:underline">
         {feature.cta} <span>→</span>
       </Link>
     </article>
@@ -135,7 +135,15 @@ export default function FeatureGrid() {
         </article>
 
         {features.map((feature, index) => (
-          <FeatureCard key={feature.sigil} feature={{ ...feature, ...translatedFeatures[index], cta: t('landing.explore') }} />
+          <FeatureCard
+            key={feature.sigil}
+            feature={{
+              ...feature,
+              ...translatedFeatures[index],
+              cta: t('landing.explore'),
+              href: index === 1 ? '/map?tab=live' : '/map',
+            }}
+          />
         ))}
       </div>
     </section>

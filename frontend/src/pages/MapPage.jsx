@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import { placesAPI, eventsAPI, citiesAPI } from '../services/api'
 import { useSocket } from '../context/SocketContext'
 import { useAuth } from '../context/AuthContext'
 import { useRoute } from '../context/RouteContext'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Search, Filter, Zap, MapPin, Star, X, Plus, Clock, Navigation, Trash2, Car, Footprints, Cloud, Sun, CloudRain, CloudLightning, CloudSnow, Wind } from 'lucide-react'
 import EventForm from '../components/EventForm'
 import PanoramaModal from '../components/PanoramaModal'
@@ -15,6 +15,7 @@ import toast from 'react-hot-toast'
 import { formatDistanceToNow } from 'date-fns'
 import { enUS, tr } from 'date-fns/locale'
 import { useLanguage } from '../i18n/LanguageContext'
+import demoEvents from '../data/demoEvents'
 
 // Custom icons
 const placeIcon = L.divIcon({
@@ -35,6 +36,14 @@ const createEventIcon = (type) => L.divIcon({
   html: `<div style="width:36px;height:36px;background:#10b981;border-radius:50%;border:2px solid #1c1917;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:16px;position:relative"><span>${eventIcons[type] || '⚡'}</span><span style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;background:#22c55e;border-radius:50%;border:1px solid #1c1917;animation:pulse-dot 1.5s infinite"></span></div>`,
   iconSize: [36, 36],
   iconAnchor: [18, 18],
+  popupAnchor: [0, -22],
+})
+
+const liveCulturalEventIcon = L.divIcon({
+  className: '',
+  html: `<div style="width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fbbf24 0%,#f97316 42%,#991b1b 100%);border:2px solid #facc15;box-shadow:0 0 0 6px rgba(249,115,22,.18),0 0 24px rgba(248,113,22,.85),0 6px 16px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;color:#fff7ed;font-size:17px;position:relative;animation:pulse-glow 1.8s ease-in-out infinite"><span>✦</span><span style="position:absolute;inset:-8px;border-radius:50%;border:1px solid rgba(251,191,36,.35);animation:pulse-dot 1.8s ease-in-out infinite"></span></div>`,
+  iconSize: [38, 38],
+  iconAnchor: [19, 19],
   popupAnchor: [0, -22],
 })
 
@@ -74,10 +83,25 @@ const formatTime = (s, language = 'tr') => {
   return `${m} dk`
 }
 
+const getEventDate = (event) => new Date(`${event.date}T${event.time}:00`)
+
+const getEventStatus = (event) => {
+  const eventDate = getEventDate(event)
+  const diffMs = eventDate.getTime() - Date.now()
+  const liveWindowMs = 2 * 60 * 60 * 1000
+
+  if (Math.abs(diffMs) <= liveWindowMs) return 'live'
+  if (diffMs > 0) return 'upcoming'
+  return null
+}
+
 const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
 
 export default function MapPage() {
   const { language, t, translateCity, translatePlace, translateEvent } = useLanguage()
+  const [searchParams] = useSearchParams()
+  const isLiveTab = searchParams.get('tab') === 'live'
+  const eventMarkerRefs = useRef({})
   const { user } = useAuth()
   const { liveEvents, setLiveEvents, joinCity, leaveCity } = useSocket()
   const { routePlaces, addToRoute, removeFromRoute, clearRoute } = useRoute()
@@ -98,6 +122,38 @@ export default function MapPage() {
   const [routePolyline, setRoutePolyline] = useState([])
   const [walkingPolyline, setWalkingPolyline] = useState([])
   const [weather, setWeather] = useState(null)
+
+  const getDemoEventTitle = (event) => language === 'tr' ? event.titleTR : event.titleEN
+  const getDemoEventDescription = (event) => language === 'tr' ? event.descriptionTR : event.descriptionEN
+  const getDemoEventStatusLabel = (status) => {
+    if (status === 'live') return language === 'tr' ? t('map.liveStatus') : 'LIVE'
+    return language === 'tr' ? t('map.upcoming') : 'UPCOMING'
+  }
+  const visibleDemoEvents = demoEvents
+    .map(event => ({
+      ...event,
+      computedStatus: getEventStatus(event),
+      eventDate: getEventDate(event),
+    }))
+    .filter(event => event.computedStatus)
+    .sort((a, b) => {
+      if (a.computedStatus !== b.computedStatus) return a.computedStatus === 'live' ? -1 : 1
+      return a.eventDate - b.eventDate
+    })
+  const focusDemoEvent = (event) => {
+    setMapCenter(event.coordinates)
+    setMapZoom(13)
+    window.setTimeout(() => {
+      eventMarkerRefs.current[event.id]?.openPopup()
+    }, 120)
+  }
+
+  useEffect(() => {
+    if (isLiveTab) {
+      setShowPlaces(false)
+      setShowEvents(true)
+    }
+  }, [isLiveTab])
 
   useEffect(() => {
     citiesAPI.getAll().then(res => setCities(res.data))
@@ -282,10 +338,61 @@ export default function MapPage() {
           <button
             onClick={() => setShowEvents(!showEvents)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors flex-1 justify-center ${showEvents ? 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30' : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'}`}
-          >⚡ {t('map.live')} ({liveEvents.length})</button>
+          >⚡ {isLiveTab ? t('map.liveCulturalEvents') : t('map.live')} ({isLiveTab ? visibleDemoEvents.length : liveEvents.length})</button>
         </div>
 
+        {isLiveTab && (
+          <div className="flex-1 flex flex-col overflow-hidden bg-stone-950">
+            <div className="p-3 border-b border-amber-500/20 bg-stone-950/95">
+              <div className="text-xs font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                <Zap size={14} />
+                {t('map.liveCulturalEvents')} ({visibleDemoEvents.length})
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {visibleDemoEvents.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                  <div className="w-12 h-12 bg-stone-900 rounded-full flex items-center justify-center mb-3 text-amber-400 border border-amber-500/20">
+                    <Zap size={20} />
+                  </div>
+                  <div className="text-sm font-semibold text-amber-300">{t('map.noLiveEvents')}</div>
+                  <p className="text-stone-500 text-xs leading-relaxed mt-1">{t('map.noLiveEventsNow')}</p>
+                </div>
+              ) : (
+                visibleDemoEvents.map(event => (
+                  <button
+                    key={event.id}
+                    onClick={() => focusDemoEvent(event)}
+                    className="group w-full text-left p-3 rounded-xl border border-amber-500/15 bg-stone-900/80 hover:border-orange-400/50 hover:bg-stone-900 transition-all shadow-[inset_0_1px_0_rgb(255_255_255_/_0.04)]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-stone-100 group-hover:text-amber-200 transition-colors line-clamp-2">
+                          {getDemoEventTitle(event)}
+                        </div>
+                        <div className="mt-1 flex items-center gap-1.5 text-[11px] text-stone-400">
+                          <MapPin size={12} className="text-amber-500" />
+                          <span className="truncate">{event.city}</span>
+                        </div>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${event.computedStatus === 'live' ? 'bg-red-500/15 text-red-300 border border-red-400/30' : 'bg-amber-400/15 text-amber-200 border border-amber-300/30'}`}>
+                        {getDemoEventStatusLabel(event.computedStatus)}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-1.5 text-[11px] text-stone-500">
+                      <Clock size={12} className="text-orange-400" />
+                      <span>{event.date} · {event.time}</span>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Route Section */}
+        {!isLiveTab && (
         <div className="flex-1 flex flex-col overflow-hidden bg-stone-50/50 dark:bg-stone-950/30">
           <div className="p-3 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between bg-white dark:bg-stone-900/50">
             <div className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2">
@@ -364,6 +471,7 @@ export default function MapPage() {
             )}
           </div>
         </div>
+        )}
       </div>
 
       {/* Map */}
@@ -420,7 +528,7 @@ export default function MapPage() {
           )}
 
           {/* Place markers */}
-          {showPlaces && places.map(place => (
+          {!isLiveTab && showPlaces && places.map(place => (
             <Marker
               key={place._id}
               position={[place.location.coordinates[1], place.location.coordinates[0]]}
@@ -457,7 +565,35 @@ export default function MapPage() {
           ))}
 
           {/* Event markers */}
-          {showEvents && liveEvents.map(event => (
+          {isLiveTab && visibleDemoEvents.map(event => (
+            <Marker
+              key={event.id}
+              ref={(marker) => {
+                if (marker) eventMarkerRefs.current[event.id] = marker
+              }}
+              position={event.coordinates}
+              icon={liveCulturalEventIcon}
+            >
+              <Popup>
+                <div className="min-w-[220px] rounded-xl bg-stone-950 text-stone-100">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="font-semibold text-amber-200 text-sm leading-snug">{getDemoEventTitle(event)}</div>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${event.computedStatus === 'live' ? 'bg-red-500/20 text-red-200 border border-red-400/40' : 'bg-amber-400/20 text-amber-100 border border-amber-300/40'}`}>
+                      {getDemoEventStatusLabel(event.computedStatus)}
+                    </span>
+                  </div>
+                  <div className="text-stone-300 text-xs mb-1">{event.city} · {event.venue}</div>
+                  <div className="flex items-center gap-1.5 text-orange-300 text-xs mb-3">
+                    <Clock size={12} />
+                    <span>{event.date} · {event.time}</span>
+                  </div>
+                  <div className="text-stone-400 text-xs leading-relaxed">{getDemoEventDescription(event)}</div>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+
+          {!isLiveTab && showEvents && liveEvents.map(event => (
             <Marker key={event._id} position={[event.location.coordinates[1], event.location.coordinates[0]]} icon={createEventIcon(event.type)}>
               <Popup>
                 <div className="min-w-[180px]">
@@ -477,7 +613,7 @@ export default function MapPage() {
         </MapContainer>
 
         {/* Floating add event button */}
-        {user && selectedCity && (
+        {!isLiveTab && user && selectedCity && (
           <button
             onClick={() => setShowEventForm(true)}
             className="absolute bottom-6 right-6 z-[1000] flex items-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full shadow-2xl transition-all active:scale-95 font-medium text-sm"
