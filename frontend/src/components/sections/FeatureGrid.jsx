@@ -1,8 +1,5 @@
 import { Link } from 'react-router-dom'
-import Compass from '../visuals/Compass'
-import TurkeyMap from '../visuals/TurkeyMap'
-import Skyline from '../visuals/Skyline'
-import HistoricalSkyline from '../visuals/HistoricalSkyline'
+import turkeyMap from '@/assets/turkey-gold-map.png'
 import { MuseumIcon, SmallFlourish } from '../visuals/Ornaments'
 
 function CalendarIcon({ className = '' }) {
@@ -93,7 +90,6 @@ function FeatureCard({ feature }) {
     <article className="lux-card group min-h-[340px] p-8 text-center">
       <CardCorners />
       <BackgroundSigil type={feature.sigil} />
-      <Skyline className="absolute bottom-0 left-0 h-[98px] w-full opacity-80" />
       <div className="relative z-[2] mx-auto mb-7 flex h-16 w-16 items-center justify-center rounded-full border border-gold-line bg-[radial-gradient(circle,hsl(var(--gold-bright)_/_0.25),transparent_68%)] text-gold-bright shadow-[0_0_24px_hsl(var(--gold-bright)_/_0.35)]">
         <Icon className="h-8 w-8" />
       </div>
@@ -109,7 +105,6 @@ function FeatureCard({ feature }) {
 export default function FeatureGrid() {
   return (
     <section className="lux-section px-5 py-10 sm:px-8 lg:px-14">
-      <HistoricalSkyline className="historical-skyline-layer" />
       <div className="ornamental-divider relative z-[4] mb-7"><span /></div>
       <div className="relative z-[4] mx-auto grid max-w-[1500px] gap-5 xl:grid-cols-[5fr_1.55fr_1.55fr_1.55fr]">
         <article className="lux-card min-h-[400px] p-5 xl:col-span-1">
@@ -125,10 +120,14 @@ export default function FeatureGrid() {
           </div>
 
           <div className="relative z-[2] mt-6 h-[275px] overflow-hidden rounded-md border border-gold/10 bg-bg-black/30">
-            <div className="absolute inset-0 bg-[linear-gradient(hsl(var(--gold)_/_0.045)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--gold)_/_0.04)_1px,transparent_1px)] bg-[size:20px_20px]" />
-            <TurkeyMap className="absolute left-1/2 top-2 h-[220px] w-[84%] -translate-x-1/2" compact idSuffix="preview" />
-            <Compass className="absolute -bottom-16 -left-8 h-48 w-48 opacity-75" small />
-            <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-5 whitespace-nowrap text-[11px] text-parchment/65">
+            <img
+              src={turkeyMap}
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-cover object-center opacity-[0.95]"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_48%,hsl(var(--background)_/_0.4)_100%)]" />
+            <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-5 whitespace-nowrap rounded-full bg-background/60 px-4 py-2 text-[11px] text-parchment/80 backdrop-blur-sm">
               <span>Yoğunluk Düzeyi:</span>
               <span className="inline-flex items-center gap-1.5"><b className="h-2 w-2 rounded-full bg-ember shadow-[0_0_8px_hsl(var(--ember-red)_/_0.7)]" />Yüksek</span>
               <span className="inline-flex items-center gap-1.5"><b className="h-2 w-2 rounded-full bg-gold shadow-[0_0_8px_hsl(var(--gold)_/_0.65)]" />Orta</span>
