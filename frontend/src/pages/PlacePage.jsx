@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
 import { placesAPI, reviewsAPI, authAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useRoute } from '../context/RouteContext'
@@ -16,6 +16,7 @@ export default function PlacePage() {
   const { user } = useAuth()
   const { addToRoute, routePlaces } = useRoute()
   const navigate = useNavigate()
+  const location = useLocation()
   const [place, setPlace] = useState(null)
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
@@ -63,9 +64,15 @@ export default function PlacePage() {
   }
 
   const handleDeleteReview = async (reviewId) => {
-    await reviewsAPI.delete(reviewId)
-    setReviews(prev => prev.filter(r => r._id !== reviewId))
-    toast.success('Yorum silindi')
+    try {
+      await reviewsAPI.delete(reviewId)
+      setReviews(prev => prev.filter(r => r._id !== reviewId))
+      const updatedPlace = await placesAPI.getOne(id)
+      setPlace(updatedPlace.data)
+      toast.success('Yorum silindi')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Yorum silinemedi')
+    }
   }
 
   if (loading) return (
@@ -194,7 +201,7 @@ export default function PlacePage() {
           </form>
         ) : (
           <div className="card p-5 mb-6 text-center text-stone-500">
-            <Link to="/login" className="text-amber-400 hover:underline">Giriş yapın</Link> veya <Link to="/register" className="text-amber-400 hover:underline">kayıt olun</Link> — yorum yazmak için.
+            <Link to="/login" state={{ from: location.pathname }} className="text-amber-400 hover:underline">Giriş yapın</Link> veya <Link to="/register" state={{ from: location.pathname }} className="text-amber-400 hover:underline">kayıt olun</Link> — yorum yazmak için.
           </div>
         )}
 

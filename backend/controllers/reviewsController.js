@@ -17,6 +17,19 @@ const getReviews = async (req, res) => {
 const createReview = async (req, res) => {
   try {
     const { rating, comment } = req.body;
+    const numericRating = Number(rating);
+    const trimmedComment = comment?.trim();
+
+    if (!Number.isFinite(numericRating) || numericRating < 1 || numericRating > 5) {
+      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+    }
+
+    if (!trimmedComment || trimmedComment.length < 10) {
+      return res.status(400).json({ message: 'Comment must be at least 10 characters' });
+    }
+
+    const place = await Place.findById(req.params.placeId);
+    if (!place) return res.status(404).json({ message: 'Place not found' });
 
     const existing = await Review.findOne({ place: req.params.placeId, user: req.user._id });
     if (existing) return res.status(400).json({ message: 'You already reviewed this place' });
@@ -24,8 +37,8 @@ const createReview = async (req, res) => {
     const review = await Review.create({
       place: req.params.placeId,
       user: req.user._id,
-      rating,
-      comment,
+      rating: numericRating,
+      comment: trimmedComment,
     });
 
     // Update place rating
