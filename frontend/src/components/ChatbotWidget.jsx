@@ -1,18 +1,23 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Bot, Loader2, MessageCircle, Send, X } from 'lucide-react'
 import { chatAPI } from '../services/api'
-
-const welcomeMessage = {
-  role: 'assistant',
-  content: 'Hi, I am CityLore Assistant. Ask me about places, history, routes, 360 views, or what to visit next.',
-}
+import { useLanguage } from '../i18n/LanguageContext'
 
 export default function ChatbotWidget() {
+  const { t, language } = useLanguage()
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState([welcomeMessage])
+  const [messages, setMessages] = useState([{ role: 'assistant', content: t('chatbot.welcome'), systemWelcome: true }])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef(null)
+
+  useEffect(() => {
+    setMessages(current => current.map((message, index) => (
+      index === 0 && message.systemWelcome
+        ? { ...message, content: t('chatbot.welcome') }
+        : message
+    )))
+  }, [language, t])
 
   const sendMessage = async (event) => {
     event?.preventDefault()
@@ -36,7 +41,7 @@ export default function ChatbotWidget() {
         ...nextMessages,
         {
           role: 'assistant',
-          content: err.response?.data?.message || 'I could not reach the chatbot service right now.',
+          content: err.response?.data?.message || t('chatbot.error'),
           error: true,
         },
       ])
@@ -58,15 +63,15 @@ export default function ChatbotWidget() {
                 <Bot size={17} />
               </div>
               <div>
-                <div className="text-sm font-semibold text-stone-100">CityLore Assistant</div>
-                <div className="text-xs text-stone-500">Historical places guide</div>
+                <div className="text-sm font-semibold text-stone-100">{t('chatbot.title')}</div>
+                <div className="text-xs text-stone-500">{t('chatbot.subtitle')}</div>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setOpen(false)}
               className="rounded-lg p-1.5 text-stone-500 transition-colors hover:bg-stone-800 hover:text-stone-200"
-              aria-label="Close chatbot"
+              aria-label={t('chatbot.close')}
             >
               <X size={16} />
             </button>
@@ -92,7 +97,7 @@ export default function ChatbotWidget() {
               <div className="flex justify-start">
                 <div className="flex items-center gap-2 rounded-2xl bg-stone-900 px-3 py-2 text-sm text-stone-400">
                   <Loader2 size={14} className="animate-spin" />
-                  Thinking...
+                  {t('chatbot.thinking')}
                 </div>
               </div>
             )}
@@ -101,7 +106,7 @@ export default function ChatbotWidget() {
           <form onSubmit={sendMessage} className="flex gap-2 border-t border-stone-800 p-3">
             <input
               className="input min-w-0 flex-1 text-sm"
-              placeholder="Ask about places..."
+              placeholder={t('chatbot.placeholder')}
               value={input}
               onChange={event => setInput(event.target.value)}
               disabled={loading}
@@ -110,7 +115,7 @@ export default function ChatbotWidget() {
               type="submit"
               disabled={loading || !input.trim()}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-stone-950 transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Send message"
+              aria-label={t('chatbot.send')}
             >
               {loading ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
             </button>
@@ -122,7 +127,7 @@ export default function ChatbotWidget() {
         type="button"
         onClick={() => setOpen(current => !current)}
         className="ml-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500 text-stone-950 shadow-xl shadow-black/30 transition-transform hover:scale-105"
-        aria-label="Open chatbot"
+        aria-label={t('chatbot.open')}
       >
         {open ? <X size={22} /> : <MessageCircle size={22} />}
       </button>

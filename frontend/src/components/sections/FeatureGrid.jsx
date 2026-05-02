@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import turkeyMap from '@/assets/turkey-gold-map.png'
 import { MuseumIcon, SmallFlourish } from '../visuals/Ornaments'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 function CalendarIcon({ className = '' }) {
   return (
@@ -53,20 +54,14 @@ function BackgroundSigil({ type }) {
 
 const features = [
   {
-    title: 'Tarihi Mekanları Keşfet',
-    text: 'Binlerce yıllık mirasa sahip mekanları detaylı içerikleriyle inceleyin.',
     icon: MuseumIcon,
     sigil: 'column',
   },
   {
-    title: 'Canlı Kültürel Etkinlikleri Gör',
-    text: 'Konser, sergi, festival ve daha fazlasını anlık olarak takip edin.',
     icon: CalendarIcon,
     sigil: 'calendar',
   },
   {
-    title: 'Kendi Gezi Rotanı Oluştur',
-    text: 'İlgi alanlarına göre rotalar oluştur, kaydet ve paylaş.',
     icon: BookIcon,
     sigil: 'route',
   },
@@ -96,13 +91,16 @@ function FeatureCard({ feature }) {
       <h3 className="card-title-gold relative z-[2] text-3xl leading-none">{feature.title}</h3>
       <p className="relative z-[2] mx-auto mt-5 max-w-[230px] font-display text-lg italic leading-[1.7] text-parchment/80">{feature.text}</p>
       <Link to="/map" className="relative z-[2] mt-8 inline-flex items-center gap-2 text-sm font-semibold text-gold-bright drop-shadow-[0_0_10px_hsl(var(--gold-bright)_/_0.32)] underline-offset-4 hover:underline">
-        Keşfet <span>→</span>
+        {feature.cta} <span>→</span>
       </Link>
     </article>
   )
 }
 
 export default function FeatureGrid() {
+  const { t } = useLanguage()
+  const translatedFeatures = t('landing.features')
+
   return (
     <section className="lux-section px-5 py-10 sm:px-8 lg:px-14">
       <div className="ornamental-divider relative z-[4] mb-7"><span /></div>
@@ -111,11 +109,11 @@ export default function FeatureGrid() {
           <CardCorners />
           <div className="relative z-[2] flex items-start justify-between gap-4">
             <div>
-              <p className="section-label">Harita Önizlemesi</p>
-              <h2 className="card-title-gold mt-2 text-3xl leading-none">Türkiye genelindeki keşif noktaları</h2>
+              <p className="section-label">{t('landing.mapPreview')}</p>
+              <h2 className="card-title-gold mt-2 text-3xl leading-none">{t('landing.mapPreviewTitle')}</h2>
             </div>
             <Link to="/map" className="hidden rounded-md border border-gold/30 bg-bg-black/60 px-4 py-2 text-sm font-semibold text-gold-bright transition hover:border-gold sm:inline-flex">
-              Tam Haritayı Aç →
+              {t('landing.openFullMap')}
             </Link>
           </div>
 
@@ -128,16 +126,16 @@ export default function FeatureGrid() {
             />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_48%,hsl(var(--background)_/_0.4)_100%)]" />
             <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-5 whitespace-nowrap rounded-full bg-background/60 px-4 py-2 text-[11px] text-parchment/80 backdrop-blur-sm">
-              <span>Yoğunluk Düzeyi:</span>
-              <span className="inline-flex items-center gap-1.5"><b className="h-2 w-2 rounded-full bg-ember shadow-[0_0_8px_hsl(var(--ember-red)_/_0.7)]" />Yüksek</span>
-              <span className="inline-flex items-center gap-1.5"><b className="h-2 w-2 rounded-full bg-gold shadow-[0_0_8px_hsl(var(--gold)_/_0.65)]" />Orta</span>
-              <span className="inline-flex items-center gap-1.5"><b className="h-2 w-2 rounded-full bg-gold-deep" />Düşük</span>
+              <span>{t('landing.density')}</span>
+              <span className="inline-flex items-center gap-1.5"><b className="h-2 w-2 rounded-full bg-ember shadow-[0_0_8px_hsl(var(--ember-red)_/_0.7)]" />{t('landing.high')}</span>
+              <span className="inline-flex items-center gap-1.5"><b className="h-2 w-2 rounded-full bg-gold shadow-[0_0_8px_hsl(var(--gold)_/_0.65)]" />{t('landing.medium')}</span>
+              <span className="inline-flex items-center gap-1.5"><b className="h-2 w-2 rounded-full bg-gold-deep" />{t('landing.low')}</span>
             </div>
           </div>
         </article>
 
-        {features.map((feature) => (
-          <FeatureCard key={feature.title} feature={feature} />
+        {features.map((feature, index) => (
+          <FeatureCard key={feature.sigil} feature={{ ...feature, ...translatedFeatures[index], cta: t('landing.explore') }} />
         ))}
       </div>
     </section>

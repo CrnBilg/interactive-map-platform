@@ -3,8 +3,11 @@ import historicColumns from '../../assets/historic-columns.png'
 import historicLandmarks from '../../assets/historic-landmarks.png'
 import Compass from '../visuals/Compass'
 import { CornerOrnament, MuseumIcon } from '../visuals/Ornaments'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 export default function Hero() {
+  const { t } = useLanguage()
+
   return (
     <section className="lux-section hero-clean min-h-[640px] px-5 py-10 sm:px-8 lg:px-16">
       <style>
@@ -136,25 +139,24 @@ export default function Hero() {
           <div className="hero-badge">
             <span className="text-gold-bright/70">✦</span>
             <MuseumIcon className="h-4 w-4" />
-            Türkiye kültür ve keşif haritası
+            {t('landing.badge')}
             <span className="text-gold-bright/70">✦</span>
           </div>
 
           <h1 className="font-display text-[clamp(48px,6vw,88px)] font-semibold leading-[1.05] tracking-[-0.02em] text-gold-bright [text-shadow:0_0_24px_hsl(var(--gold-bright)_/_0.25)]">
-            <span className="block bg-gradient-to-b from-gold-bright to-gold bg-clip-text text-transparent">Türkiye'yi keşfetmenin</span>
-            <span className="block bg-gradient-to-b from-gold-bright to-gold bg-clip-text text-transparent">en kolay yolu</span>
+            <span className="block bg-gradient-to-b from-gold-bright to-gold bg-clip-text text-transparent">{t('landing.heroLine1')}</span>
+            <span className="block bg-gradient-to-b from-gold-bright to-gold bg-clip-text text-transparent">{t('landing.heroLine2')}</span>
           </h1>
 
           <p className="mt-6 max-w-[480px] text-[15px] leading-[1.7] text-parchment/80">
-            Tarihi mekanları, şehirleri ve canlı etkinlikleri sade bir interaktif haritada keşfedin; rotanızı
-            planlayın ve yeni durakları kolayca bulun.
+            {t('landing.heroText')}
           </p>
 
           <Link
             to="/map"
             className="hero-cta group mt-8 inline-flex items-center gap-3 rounded-lg bg-gradient-to-b from-gold-bright to-gold-deep px-7 py-3.5 font-semibold text-bg-deep transition duration-300"
           >
-            Haritayı Aç
+            {t('common.openMap')}
             <span className="transition duration-300 group-hover:translate-x-1">→</span>
           </Link>
         </div>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { X, Star, MapPin, Clock, DollarSign, Globe, ExternalLink, AlertCircle, Maximize2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getGoogleStreetViewEmbedUrl, getPanoramaxUrl, getPrimary360Source } from '../utils/place360'
+import { useLanguage } from '../i18n/LanguageContext'
 
 const GOOGLE_EMBED_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_EMBED_API_KEY
 
@@ -9,11 +10,6 @@ const categoryEmoji = {
   historical: '🏛️', museum: '🏺', mosque: '🕌', castle: '🏰',
   ruins: '⛏️', monument: '🗿', cultural: '🎭', other: '📍',
 }
-const categoryLabel = {
-  historical: 'Tarihi', museum: 'Müze', mosque: 'Cami', castle: 'Kale',
-  ruins: 'Harabe', monument: 'Anıt', cultural: 'Kültürel', other: 'Diğer',
-}
-
 const mediaTypeFromUrl = (url = '') => {
   const cleanUrl = url.split('?')[0].toLowerCase()
   if (/\.(jpg|jpeg|png|webp|gif)$/.test(cleanUrl)) return 'image'
@@ -22,6 +18,7 @@ const mediaTypeFromUrl = (url = '') => {
 }
 
 export default function PanoramaModal({ place, onClose }) {
+  const { t, translatePlace } = useLanguage()
   const viewerRef = useRef(null)
   const [viewerMode, setViewerMode] = useState('loading')
   const [statusMessage, setStatusMessage] = useState('')
@@ -55,11 +52,11 @@ export default function PanoramaModal({ place, onClose }) {
     if (googleEmbedUrl) {
       setViewerMode('google')
     } else if (!source) {
-      setStatusMessage('No verified 360 source exists for this place yet.')
+      setStatusMessage(t('panorama.noSource'))
       setViewerMode('message')
     } else if (source.type === 'panorama') {
       if (fallbackMediaType === 'external') {
-        setStatusMessage('This backup 360 source opens as an external page and cannot be embedded here. Use the button below to open it.')
+        setStatusMessage(t('panorama.externalPanorama'))
         setViewerMode('external')
       } else {
         setViewerMode('panorama')
@@ -67,7 +64,7 @@ export default function PanoramaModal({ place, onClose }) {
     } else if (fallbackIframeUrl) {
       setViewerMode('iframe')
     } else {
-      setStatusMessage('This backup street-level source does not allow embedding. Use the button below to open it.')
+      setStatusMessage(t('panorama.externalStreet'))
       setViewerMode('external')
     }
   }, [googleEmbedUrl, source, fallbackMediaType, fallbackIframeUrl])
@@ -81,6 +78,7 @@ export default function PanoramaModal({ place, onClose }) {
   }
 
   if (!place) return null
+  const displayPlace = translatePlace(place)
 
   return (
     <div className="fixed inset-0 z-[3000] flex items-center justify-center p-3 md:p-6">
@@ -90,7 +88,7 @@ export default function PanoramaModal({ place, onClose }) {
         <div ref={viewerRef} className="relative bg-stone-950" style={{ height: '320px' }}>
           {viewerMode === 'google' && (
             <iframe
-              title={`${place.name} Google Street View`}
+              title={`${displayPlace.displayName} Google Street View`}
               src={googleEmbedUrl}
               className="w-full h-full border-0"
               loading="lazy"
@@ -103,13 +101,13 @@ export default function PanoramaModal({ place, onClose }) {
             fallbackMediaType === 'video' ? (
               <video src={source.value} className="w-full h-full object-contain" controls autoPlay muted loop playsInline />
             ) : (
-              <img src={source.value} alt={`${place.name} 360 view`} className="w-full h-full object-contain" />
+              <img src={source.value} alt={`${displayPlace.displayName} 360 view`} className="w-full h-full object-contain" />
             )
           )}
 
           {viewerMode === 'iframe' && fallbackIframeUrl && (
             <iframe
-              title={`${place.name} street-level view`}
+              title={`${displayPlace.displayName} street-level view`}
               src={fallbackIframeUrl}
               className="w-full h-full border-0"
               loading="lazy"
@@ -122,7 +120,7 @@ export default function PanoramaModal({ place, onClose }) {
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
                 <div className="text-5xl mb-3">{categoryEmoji[place.category]}</div>
-                <div className="text-stone-500 text-sm">360 view loading...</div>
+                <div className="text-stone-500 text-sm">{t('panorama.loading')}</div>
               </div>
             </div>
           )}
@@ -142,7 +140,7 @@ export default function PanoramaModal({ place, onClose }) {
                 <AlertCircle size={24} className="mx-auto mb-3 text-amber-400" />
                 <p className="text-sm text-stone-300 mb-4">{statusMessage}</p>
                 <a href={source.value} target="_blank" rel="noopener noreferrer" className="btn-primary inline-flex items-center gap-2">
-                  <ExternalLink size={14} /> Open view
+                  <ExternalLink size={14} /> {t('panorama.openView')}
                 </a>
               </div>
             </div>
@@ -151,7 +149,7 @@ export default function PanoramaModal({ place, onClose }) {
           <div className="absolute top-0 inset-x-0 flex items-start justify-between p-3 z-10">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-xs text-stone-300">
               <span className="w-1.5 h-1.5 bg-amber-400 rounded-full" />
-              {viewerMode === 'google' ? 'Google Street View' : source?.type === 'panoramax' ? 'Panoramax' : source ? '360 View' : 'No 360 View'}
+              {viewerMode === 'google' ? 'Google Street View' : source?.type === 'panoramax' ? 'Panoramax' : source ? '360 View' : t('panorama.no360')}
             </div>
 
             <div className="flex items-center gap-2">
@@ -171,10 +169,10 @@ export default function PanoramaModal({ place, onClose }) {
           <div className="flex items-start gap-3 mb-3">
             <div className="text-3xl">{categoryEmoji[place.category]}</div>
             <div className="flex-1 min-w-0">
-              <h2 className="font-display text-xl font-bold text-stone-100 leading-tight">{place.name}</h2>
+              <h2 className="font-display text-xl font-bold text-stone-100 leading-tight">{displayPlace.displayName}</h2>
               <div className="flex items-center gap-1.5 text-stone-500 text-xs mt-1">
-                <MapPin size={11} /> {place.city}
-                {place.address && <span>• {place.address}</span>}
+                <MapPin size={11} /> {displayPlace.displayCity}
+                {place.address && <span>• {displayPlace.displayAddress}</span>}
               </div>
             </div>
             {place.rating > 0 && (
@@ -187,16 +185,16 @@ export default function PanoramaModal({ place, onClose }) {
 
           <div className="flex flex-wrap gap-2 mb-3">
             <span className="badge bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs px-2.5 py-1">
-              {categoryLabel[place.category]}
+              {displayPlace.displayCategory || t(`categories.${place.category}`)}
             </span>
             {place.period && (
               <span className="badge bg-stone-800 text-stone-400 border border-stone-700 text-xs px-2.5 py-1">
-                {place.period}
+                {displayPlace.displayPeriod}
               </span>
             )}
             {place.entryFee === 0 ? (
               <span className="badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs px-2.5 py-1">
-                Ücretsiz
+                {t('common.free')}
               </span>
             ) : place.entryFee > 0 ? (
               <span className="badge bg-stone-800 text-stone-400 border border-stone-700 text-xs px-2.5 py-1">
@@ -205,18 +203,18 @@ export default function PanoramaModal({ place, onClose }) {
             ) : null}
             {place.openingHours && (
               <span className="badge bg-stone-800 text-stone-400 border border-stone-700 text-xs px-2.5 py-1 flex items-center gap-1">
-                <Clock size={10} /> {place.openingHours}
+                <Clock size={10} /> {displayPlace.displayOpeningHours}
               </span>
             )}
           </div>
 
           <p className="text-stone-400 text-sm leading-relaxed mb-4 line-clamp-3">
-            {place.description}
+            {displayPlace.displayDescription}
           </p>
 
           <div className="flex gap-2">
             <Link to={`/place/${place._id}`} onClick={onClose} className="btn-primary flex-1 text-center text-sm py-2.5 flex items-center justify-center gap-2">
-              <ExternalLink size={14} /> Detay Sayfası
+              <ExternalLink size={14} /> {t('common.detailsPage')}
             </Link>
             <a href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=18/${lat}/${lng}`} target="_blank" rel="noopener noreferrer" className="btn-secondary text-sm py-2.5 flex items-center gap-1.5">
               <Globe size={14} /> OSM

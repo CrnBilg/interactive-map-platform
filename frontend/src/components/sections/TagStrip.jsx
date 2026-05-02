@@ -1,3 +1,5 @@
+import { useLanguage } from '../../i18n/LanguageContext'
+
 const places = [
   'Aspendos',
   'Sümela Manastırı',
@@ -14,6 +16,8 @@ const places = [
 ]
 
 export default function TagStrip() {
+  const { translateEntity } = useLanguage()
+
   return (
     <section className="chip-strip">
       <div className="ornamental-divider absolute left-1/2 top-[-2px] z-[2] -translate-x-1/2"><span /></div>
@@ -21,7 +25,7 @@ export default function TagStrip() {
         {[...places, ...places, ...places, ...places].map((place, index) => (
           <span key={`${place}-${index}`} className="chip-pill">
             <span className="chip-dot" />
-            {place}
+            {translateEntity(place)}
           </span>
         ))}
       </div>
