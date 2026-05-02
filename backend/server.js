@@ -7,6 +7,14 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+const { getJwtSecret } = require('./config/jwt');
+try {
+  getJwtSecret();
+} catch (e) {
+  console.error(e.message);
+  process.exit(1);
+}
+
 const app = express();
 const server = http.createServer(app);
 
@@ -29,6 +37,7 @@ app.use('/api/events', require('./routes/events'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/cities', require('./routes/cities'));
 app.use('/api/chat', require('./routes/chat'));
+app.use('/api/directions', require('./routes/directions'));
 
 // Health check
 app.get('/', (req, res) => res.json({ message: 'CityLore API running 🏛️' }));
@@ -64,9 +73,21 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
-    server.listen(process.env.PORT || 5000, () => {
-      console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
-    });
+    const port = Number(process.env.PORT) || 5000;
+    server
+      .listen(port, () => {
+        console.log(`🚀 Server running on port ${port}`);
+      })
+      .on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          console.error(
+            `❌ Port ${port} is already in use. Stop the other Node/backend process or set a different PORT in backend/.env.`
+          );
+        } else {
+          console.error('❌ Server listen error:', err.message);
+        }
+        process.exit(1);
+      });
   })
   .catch((err) => {
     console.error('❌ MongoDB connection error:', err);

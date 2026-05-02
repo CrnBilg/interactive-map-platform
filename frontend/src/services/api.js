@@ -56,4 +56,10 @@ export const chatAPI = {
   send: (messages) => api.post('/chat', { messages }),
 }
 
+/** Rota: hem araç hem yürüyüş için backend üzerinden ORS/OSRM (İptal: `{ signal }`). */
+export const directionsAPI = {
+  route: (coordinates, profile, config = {}) =>
+    api.post('/directions', { coordinates, profile }, config),
+}
+
 export default api

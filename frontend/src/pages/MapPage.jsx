@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet'
 import L from 'leaflet'
-import { placesAPI, eventsAPI, citiesAPI } from '../services/api'
+import { placesAPI, eventsAPI, citiesAPI, directionsAPI } from '../services/api'
 import { useSocket } from '../context/SocketContext'
 import { useAuth } from '../context/AuthContext'
 import { useRoute } from '../context/RouteContext'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Search, Filter, Zap, MapPin, Star, X, Plus, Clock, Navigation, Trash2, Car, Footprints, Cloud, Sun, CloudRain, CloudLightning, CloudSnow, Wind } from 'lucide-react'
+import { Search, Filter, Zap, MapPin, Star, X, Plus, Clock, Navigation, Trash2, Car, Footprints, Cloud, Sun, CloudRain, CloudLightning, CloudSnow, Wind, Compass } from 'lucide-react'
 import EventForm from '../components/EventForm'
 import PanoramaModal from '../components/PanoramaModal'
 import { has360Imagery } from '../utils/place360'
@@ -97,6 +97,129 @@ const getEventStatus = (event) => {
 
 const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
 
+/** Hazır rotada yalnızca ilgili ile kayıtlı mekanlar kullanılsın (DB place.city === route.city). */
+const placeMatchesRouteCity = (place, routeCity) => {
+  if (!place?.city || !routeCity) return false
+  const a = String(place.city).trim()
+  const b = String(routeCity).trim()
+  return a.localeCompare(b, 'tr', { sensitivity: 'accent' }) === 0
+}
+
+const PREDEFINED_ROUTES = [
+  {
+    id: 'istanbul-osmanli',
+    name: 'İstanbul: Osmanlı Turu',
+    city: 'İstanbul',
+    description: 'Sultanahmet merkezli klasik bir rota.',
+    placeNames: ['Topkapı Sarayı', 'Ayasofya', 'Sultanahmet Camii', 'Kapalıçarşı', 'Rumeli Hisarı']
+  },
+  {
+    id: 'ankara-milli',
+    name: 'Ankara: Milli Mücadele',
+    city: 'Ankara',
+    description: 'Cumhuriyetin kuruluş izleri.',
+    placeNames: ['Anıtkabir', 'Ankara Kalesi', 'Anadolu Medeniyetleri Müzesi', 'Haci Bayram Veli Camii']
+  },
+  {
+    id: 'konya-mevlana',
+    name: 'Konya: Mevlana İzinde',
+    city: 'Konya',
+    description: 'Selçuklu ve Mevlevilik kültürü.',
+    placeNames: ['Mevlana Müzesi', 'Alaeddin Camii', 'Sille']
+  },
+  {
+    id: 'izmir-ege',
+    name: 'İzmir: Ege Antikleri',
+    city: 'İzmir',
+    description: 'İzmir ili sınırları içindeki antik ve kent merkezi durakları.',
+    placeNames: ['Kemeraltı Çarşısı', 'Agora Ören Yeri', 'Kadifekale', 'Efes Antik Kenti']
+  },
+  {
+    id: 'bursa-osmanli-baskent',
+    name: 'Bursa: Osmanlı Başkenti',
+    city: 'Bursa',
+    description: 'Yeşil, hanlar ve erken dönem Osmanlı izleri.',
+    placeNames: ['Yeşil Camii', 'Koza Han', 'Muradiye Külliyesi', 'Bursa Kalesi']
+  },
+  {
+    id: 'edirne-saray',
+    name: 'Edirne: Sinan ve Saray',
+    city: 'Edirne',
+    description: 'Selimiye merkezli klasik Edirne turu.',
+    placeNames: ['Selimiye Camii', 'Eski Camii', 'Üç Şerefeli Camii', 'Meriç Köprüsü']
+  },
+  {
+    id: 'antalya-antik',
+    name: 'Antalya: Pamfilya Kalıntıları',
+    city: 'Antalya',
+    description: 'Perge ve Aspendos antik mirası.',
+    placeNames: ['Perge Antik Kenti', 'Aspendos Tiyatrosu']
+  },
+  {
+    id: 'cappadocia-peri',
+    name: 'Kapadokya: Peri Bacaları',
+    city: 'Cappadocia',
+    description: 'Yeraltı şehirleri ve vadiler.',
+    placeNames: ['Derinkuyu Yeraltı Şehri', 'Kaymakli Yeralti Sehri', 'Göreme Açık Hava Müzesi', 'Uchisar Kalesi']
+  },
+  {
+    id: 'samsun-kurtulus',
+    name: 'Samsun: Kurtuluş Rotası',
+    city: 'Samsun',
+    description: 'Bandırma’dan İlkadım’a Milli Mücadele hafızası.',
+    placeNames: ['Bandırma Gemi-Müzesi', 'İlkadım Anıtı', 'Kurtuluş Yolu Başlangıç Noktası']
+  },
+  {
+    id: 'canakkale-troya',
+    name: 'Çanakkale: Troya’dan Gelibolu’ya',
+    city: 'Çanakkale',
+    description: 'Antik kentler ve yakın tarih.',
+    placeNames: ['Troya Antik Kenti', 'Assos Antik Kenti', 'Çanakkale Şehitler Abidesi', 'Kilitbahir Kalesi']
+  },
+  {
+    id: 'gaziantep-mozaik',
+    name: 'Gaziantep: Mozaik ve Çarşı',
+    city: 'Gaziantep',
+    description: 'Zeugma’dan bakırcılar çarşısına.',
+    placeNames: ['Zeugma Mozaik Müzesi', 'Gaziantep Kalesi', 'Bakırcılar Çarşısı', 'Zincirli Bedesten']
+  },
+  {
+    id: 'sanliurfa-peygamber',
+    name: 'Şanlıurfa: Tarihin Başlangıcı',
+    city: 'Şanlıurfa',
+    description: 'Göbeklitepe, Harran ve kutsal merkez.',
+    placeNames: ['Göbeklitepe', 'Balıklıgöl', 'Haleplibahçe Mozaik Müzesi', 'Harran Antik Kenti']
+  },
+  {
+    id: 'denizli-pamukkale',
+    name: 'Denizli: Traverten ve Antik Kentler',
+    city: 'Denizli',
+    description: 'Pamukkale ve çevresindeki ören yerleri.',
+    placeNames: ['Pamukkale Travertenleri', 'Hierapolis Antik Kenti', 'Laodikeia Antik Kenti']
+  },
+  {
+    id: 'diyarbakir-sur',
+    name: 'Diyarbakır: Surlar ve Dicle',
+    city: 'Diyarbakır',
+    description: 'UNESCO surları ve Hevsel bahçeleri.',
+    placeNames: ['Diyarbakır Surları', 'Hevsel Bahçeleri', 'Hasan Paşa Hanı']
+  },
+  {
+    id: 'mardin-tas',
+    name: 'Mardin: Taş Şehir',
+    city: 'Mardin',
+    description: 'Medreseler ve Süryani mirası.',
+    placeNames: ['Mardin Eski Şehir', 'Kasımiye Medresesi', 'Deyrulzafaran Manastırı']
+  },
+  {
+    id: 'van-urartu',
+    name: 'Van: Urartu İzleri',
+    city: 'Van',
+    description: 'Tuşpa, müze ve Akdamar.',
+    placeNames: ['Van Kalesi', 'Van Müzesi', 'Akdamar Kilisesi']
+  }
+];
+
 export default function MapPage() {
   const { language, t, translateCity, translatePlace, translateEvent } = useLanguage()
   const [searchParams] = useSearchParams()
@@ -104,7 +227,7 @@ export default function MapPage() {
   const eventMarkerRefs = useRef({})
   const { user } = useAuth()
   const { liveEvents, setLiveEvents, joinCity, leaveCity } = useSocket()
-  const { routePlaces, addToRoute, removeFromRoute, clearRoute } = useRoute()
+  const { routePlaces, addToRoute, removeFromRoute, clearRoute, setRoutePlaces } = useRoute()
   const [places, setPlaces] = useState([])
   const [cities, setCities] = useState([])
   const [selectedCity, setSelectedCity] = useState(null)
@@ -122,6 +245,7 @@ export default function MapPage() {
   const [routePolyline, setRoutePolyline] = useState([])
   const [walkingPolyline, setWalkingPolyline] = useState([])
   const [weather, setWeather] = useState(null)
+  const [showPredefined, setShowPredefined] = useState(false)
 
   const getDemoEventTitle = (event) => language === 'tr' ? event.titleTR : event.titleEN
   const getDemoEventDescription = (event) => language === 'tr' ? event.descriptionTR : event.descriptionEN
@@ -179,7 +303,7 @@ export default function MapPage() {
     fetchWeather()
   }, [selectedCity])
 
-  // Fetch both driving and walking route summaries and geometries from OpenRouteService API
+  // Fetch both driving and walking route summaries and geometries from backend API
   useEffect(() => {
     if (routePlaces.length < 2) {
       setRouteSummary(null)
@@ -189,50 +313,51 @@ export default function MapPage() {
       return
     }
 
+    const ac = new AbortController()
+
     const fetchRoutes = async () => {
       const coordinates = routePlaces.map(p => [p.location.coordinates[0], p.location.coordinates[1]])
       
-      const fetchORSRoute = async (profile) => {
-        try {
-          const response = await axios.post(`https://api.openrouteservice.org/v2/directions/${profile}/geojson`, {
-            coordinates: coordinates,
-            preference: 'shortest'
-          }, {
-            headers: {
-              'Authorization': ORS_API_KEY,
-              'Content-Type': 'application/json'
-            }
-          })
-          
-          if (response.data.features && response.data.features[0]) {
-            const feature = response.data.features[0]
-            const geometry = feature.geometry.coordinates.map(coord => [coord[1], coord[0]])
+      try {
+        // Clear summaries to show loading state
+        setRouteSummary(null)
+        setWalkingSummary(null)
 
-            if (profile === 'driving-car') {
-              setRoutePolyline(geometry)
-            } else if (profile === 'foot-walking') {
-              setWalkingPolyline(geometry)
-            }
+        const [driveRes, walkRes] = await Promise.allSettled([
+          directionsAPI.route(coordinates, 'driving-car', { signal: ac.signal }),
+          directionsAPI.route(coordinates, 'foot-walking', { signal: ac.signal })
+        ]);
 
-            return {
-              distance: feature.properties.summary.distance,
-              time: feature.properties.summary.duration
-            }
-          }
-        } catch (err) {
-          console.error(`ORS ${profile} error:`, err)
-          return null
+        if (ac.signal.aborted) return;
+
+        // Handle Driving Result
+        if (driveRes.status === 'fulfilled' && driveRes.value.data) {
+          const data = driveRes.value.data;
+          setRoutePolyline(data.geometry || []);
+          setRouteSummary({
+            distance: data.distance,
+            time: data.duration
+          });
+        }
+
+        // Handle Walking Result
+        if (walkRes.status === 'fulfilled' && walkRes.value.data) {
+          const data = walkRes.value.data;
+          setWalkingPolyline(data.geometry || []);
+          setWalkingSummary({
+            distance: data.distance,
+            time: data.duration
+          });
+        }
+      } catch (err) {
+        if (!axios.isCancel(err)) {
+          console.error('Route fetching error:', err);
         }
       }
-
-      const driveData = await fetchORSRoute('driving-car')
-      if (driveData) setRouteSummary(driveData)
-
-      const walkData = await fetchORSRoute('foot-walking')
-      if (walkData) setWalkingSummary(walkData)
     }
 
     fetchRoutes()
+    return () => ac.abort()
   }, [routePlaces])
 
   useEffect(() => {
@@ -265,7 +390,51 @@ export default function MapPage() {
     toast.success(t('map.eventReported'))
   }
 
-  const waypoints = routePlaces.map(p => [p.location.coordinates[1], p.location.coordinates[0]])
+  const handleLoadPredefined = async (route) => {
+    try {
+      const bulkRes = await placesAPI.getAll({ city: route.city, limit: 2000 })
+      const inCity = bulkRes.data.places || []
+
+      const selectedPlaces = []
+      const missing = []
+      for (const name of route.placeNames) {
+        const fromSidebar = places.find((p) => p.name === name && placeMatchesRouteCity(p, route.city))
+        if (fromSidebar) {
+          selectedPlaces.push(fromSidebar)
+          continue
+        }
+        let match = inCity.find((p) => p.name === name && placeMatchesRouteCity(p, route.city))
+        if (!match) match = inCity.find((p) => p.name === name)
+        if (match && placeMatchesRouteCity(match, route.city)) {
+          selectedPlaces.push(match)
+          continue
+        }
+        const searched = await placesAPI.getAll({ city: route.city, search: name, limit: 80 })
+        const hits = searched.data.places || []
+        match = hits.find((p) => p.name === name && placeMatchesRouteCity(p, route.city))
+        if (match) selectedPlaces.push(match)
+        else missing.push(name)
+      }
+
+      if (selectedPlaces.length > 0) {
+        setRoutePlaces(selectedPlaces)
+        const city = cities.find((c) => c.name === route.city)
+        if (city) handleCitySelect(city)
+
+        if (missing.length > 0) {
+          toast.success(`${route.name}: ${selectedPlaces.length}/${route.placeNames.length} mekan yüklendi. Bulunamayan: ${missing.join(', ')}`)
+        } else {
+          toast.success(`${route.name} yüklendi!`)
+        }
+        setShowPredefined(false)
+      } else {
+        toast.error(`Bu rota için ${route.city} ili kayıtlarında mekan bulunamadı.`)
+      }
+    } catch (err) {
+      console.error('Error loading predefined route:', err)
+      toast.error('Rota yüklenirken hata oluştu.')
+    }
+  }
 
   return (
     <div className="h-[calc(100vh-64px)] flex">
@@ -399,14 +568,43 @@ export default function MapPage() {
               <Navigation size={14} />
               {t('map.myRoute')} ({routePlaces.length})
             </div>
-            {routePlaces.length > 0 && (
-              <button onClick={clearRoute} className="text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
-                <Trash2 size={14} />
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setShowPredefined(!showPredefined)}
+                className={`p-1.5 rounded-lg transition-colors ${showPredefined ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-600' : 'text-stone-400 hover:text-amber-500'}`}
+                title="Hazır Rotalar"
+              >
+                <Compass size={16} />
               </button>
-            )}
+              {routePlaces.length > 0 && (
+                <button onClick={clearRoute} className="text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 relative">
+            {showPredefined && (
+              <div className="absolute inset-0 z-10 bg-white/95 dark:bg-stone-900/95 p-3 space-y-3 animate-in slide-in-from-right">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-bold text-stone-500 uppercase tracking-tighter">Hazır Tematik Rotalar</div>
+                  <button onClick={() => setShowPredefined(false)} className="text-stone-400 hover:text-stone-600"><X size={14}/></button>
+                </div>
+                {PREDEFINED_ROUTES.map(route => (
+                  <button
+                    key={route.id}
+                    onClick={() => handleLoadPredefined(route)}
+                    className="w-full text-left p-3 rounded-xl border border-stone-200 dark:border-stone-700 hover:border-amber-400 dark:hover:border-amber-500 transition-all bg-white dark:bg-stone-800 group"
+                  >
+                    <div className="text-xs font-bold text-amber-600 dark:text-amber-500 mb-1">{route.city}</div>
+                    <div className="text-sm font-semibold text-stone-800 dark:text-stone-200 group-hover:text-amber-600 transition-colors">{route.name}</div>
+                    <div className="text-[10px] text-stone-500 mt-1">{route.description}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+
             {routePlaces.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-4">
                 <div className="w-12 h-12 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mb-3 text-stone-300 dark:text-stone-600">
@@ -436,7 +634,7 @@ export default function MapPage() {
                   </div>
                 ))}
 
-                {routeSummary && routePlaces.length >= 2 && (
+                {routePlaces.length >= 2 && (routeSummary || walkingSummary) && (
                   <div className="mt-4 p-3 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl space-y-3 animate-fade-in shadow-inner">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
@@ -444,8 +642,12 @@ export default function MapPage() {
                         <span className="text-xs">{t('map.driving')}</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm font-bold text-amber-600 dark:text-amber-500">{formatTime(routeSummary.time, language)}</div>
-                        <div className="text-[10px] text-stone-400 dark:text-stone-600 font-mono">{formatDistance(routeSummary.distance)}</div>
+                        <div className="text-sm font-bold text-amber-600 dark:text-amber-500">
+                          {routeSummary ? formatTime(routeSummary.time, language) : '—'}
+                        </div>
+                        <div className="text-[10px] text-stone-400 dark:text-stone-600 font-mono">
+                          {routeSummary ? formatDistance(routeSummary.distance) : '—'}
+                        </div>
                       </div>
                     </div>
 
@@ -458,10 +660,10 @@ export default function MapPage() {
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-bold text-emerald-600 dark:text-emerald-500">
-                          {walkingSummary ? formatTime(walkingSummary.time, language) : '...'}
+                          {walkingSummary ? formatTime(walkingSummary.time, language) : '—'}
                         </div>
                         <div className="text-[10px] text-stone-400 dark:text-stone-600 font-mono">
-                          {walkingSummary ? formatDistance(walkingSummary.distance) : '...'}
+                          {walkingSummary ? formatDistance(walkingSummary.distance) : '—'}
                         </div>
                       </div>
                     </div>
@@ -488,41 +690,47 @@ export default function MapPage() {
           />
           <MapController center={mapCenter} zoom={mapZoom} />
 
-          {/* Driving Route (with outline for prominence) */}
-          {routePolyline.length > 0 && (
-            <>
-              <Polyline 
-                positions={routePolyline}
-                pathOptions={{ color: '#000', weight: 10, opacity: 0.3, lineJoin: 'round' }} 
-              />
-              <Polyline 
-                positions={routePolyline}
-                pathOptions={{ 
-                  color: '#f59e0b', 
-                  weight: 6, 
-                  opacity: 1,
-                  lineJoin: 'round'
-                }} 
-              />
-            </>
+          {/* Sürüş Rotası (Sarı - Alt katman) */}
+          {routePolyline.length >= 2 && (
+            <Polyline
+              positions={routePolyline}
+              pathOptions={{ 
+                color: '#f59e0b', 
+                weight: 7, 
+                opacity: 0.8,
+                lineCap: 'round',
+                lineJoin: 'round'
+              }}
+            />
           )}
 
-          {/* Walking Route (with outline for prominence) */}
-          {walkingPolyline.length > 0 && (
+          {/* Yürüyüş Rotası (Yeşil Kesikli - Üst katman) */}
+          {walkingPolyline.length >= 2 && (
             <>
-              <Polyline 
+              {/* Kontrast için Beyaz Dış Çerçeve */}
+              <Polyline
                 positions={walkingPolyline}
-                pathOptions={{ color: '#000', weight: 8, opacity: 0.3, lineJoin: 'round' }} 
+                pathOptions={{
+                  color: '#ffffff',
+                  weight: 8,
+                  opacity: 0.9,
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                  pane: 'popupPane'
+                }}
               />
-              <Polyline 
+              {/* Belirgin Yeşil Kesikli Hat */}
+              <Polyline
                 positions={walkingPolyline}
-                pathOptions={{ 
-                  color: '#10b981', 
-                  weight: 4, 
+                pathOptions={{
+                  color: '#16a34a', // Daha güçlü bir yeşil
+                  weight: 5,
                   opacity: 1,
-                  dashArray: '2, 10',
-                  lineJoin: 'round'
-                }} 
+                  dashArray: '8, 8', // Daha görünür kesikler
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                  pane: 'popupPane'
+                }}
               />
             </>
           )}
