@@ -1,6 +1,6 @@
 // LoginPage
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import { Landmark } from 'lucide-react'
@@ -8,8 +8,10 @@ import { Landmark } from 'lucide-react'
 export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [form, setForm] = useState({ email: '', password: '' })
   const [loading, setLoading] = useState(false)
+  const from = location.state?.from || '/'
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -17,7 +19,7 @@ export function LoginPage() {
     try {
       await login(form.email, form.password)
       toast.success('Hoş geldin!')
-      navigate('/')
+      navigate(from, { replace: true })
     } catch (err) {
       toast.error(err.response?.data?.message || 'Giriş başarısız')
     } finally {
@@ -48,7 +50,7 @@ export function LoginPage() {
             {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
           </button>
           <p className="text-center text-stone-500 text-sm">
-            Hesabın yok mu? <Link to="/register" className="text-amber-400 hover:underline">Kayıt ol</Link>
+            Hesabın yok mu? <Link to="/register" state={{ from }} className="text-amber-400 hover:underline">Kayıt ol</Link>
           </p>
         </form>
       </div>

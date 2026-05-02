@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import { Landmark } from 'lucide-react'
@@ -7,8 +7,10 @@ import { Landmark } from 'lucide-react'
 export default function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [form, setForm] = useState({ username: '', email: '', password: '' })
   const [loading, setLoading] = useState(false)
+  const from = location.state?.from || '/'
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -17,7 +19,7 @@ export default function RegisterPage() {
     try {
       await register(form.username, form.email, form.password)
       toast.success('Hesabın oluşturuldu!')
-      navigate('/')
+      navigate(from, { replace: true })
     } catch (err) {
       toast.error(err.response?.data?.message || 'Kayıt başarısız')
     } finally {
@@ -52,7 +54,7 @@ export default function RegisterPage() {
             {loading ? 'Kayıt oluşturuluyor...' : 'Kayıt Ol'}
           </button>
           <p className="text-center text-stone-500 text-sm">
-            Hesabın var mı? <Link to="/login" className="text-amber-400 hover:underline">Giriş yap</Link>
+            Hesabın var mı? <Link to="/login" state={{ from }} className="text-amber-400 hover:underline">Giriş yap</Link>
           </p>
         </form>
       </div>

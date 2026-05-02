@@ -1,15 +1,14 @@
-const axios = require('axios');
 const Place = require('../models/Place');
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
 const TURKISH_CHARS = {
-  c: '[cç]',
-  g: '[gğ]',
-  i: '[iıİI]',
-  o: '[oö]',
-  s: '[sş]',
-  u: '[uü]',
+  c: '[c\\u00e7]',
+  g: '[g\\u011f]',
+  i: '[i\\u0131\\u0130I]',
+  o: '[o\\u00f6]',
+  s: '[s\\u015f]',
+  u: '[u\\u00fc]',
 };
 
 const cleanMessages = (messages = []) =>
@@ -45,7 +44,7 @@ const turkishLoosePattern = word =>
 const extractSearchWords = text =>
   text
     .toLowerCase()
-    .split(/[^a-z0-9çğıöşüİ]+/i)
+    .split(/[^a-z0-9\u00e7\u011f\u0131\u00f6\u015f\u00fc\u0130]+/i)
     .map(word => word.trim())
     .filter(word => word.length >= 4)
     .slice(-8);
@@ -111,8 +110,15 @@ const chat = async (req, res) => {
       formatPlaceContext(places) || 'No place data is available yet.',
     ].join('\n');
 
-    try {
-      const response = await axios.post(OPENROUTER_URL, {
+    const response = await fetch(OPENROUTER_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.CLIENT_URL || 'http://localhost:5173',
+        'X-Title': 'CityLore',
+      },
+      body: JSON.stringify({
         model: DEFAULT_MODEL,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -120,46 +126,30 @@ const chat = async (req, res) => {
         ],
         temperature: 0.4,
         max_tokens: 550,
-      }, {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.CLIENT_URL || 'http://localhost:5173',
-          'X-Title': 'CityLore',
-        }
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const providerMessage = data?.error?.message || data?.message || '';
+      const isAuthProblem = response.status === 401 || response.status === 403 || /user not found|invalid api key|unauthorized/i.test(providerMessage);
+
+      return res.status(response.status).json({
+        message: isAuthProblem
+          ? 'OpenRouter API key is invalid or revoked. Add a fresh OPENROUTER_API_KEY to backend/.env and restart the backend.'
+          : providerMessage || 'Chat provider request failed.',
       });
-
-      const data = response.data;
-      const reply = data?.choices?.[0]?.message?.content?.trim();
-      
-      if (!reply) {
-        return res.status(502).json({ message: 'Chat provider returned an empty response.' });
-      }
-
-      res.json({ reply });
-    } catch (axiosError) {
-      const status = axiosError.response?.status || 502;
-      const errorData = axiosError.response?.data;
-      const errorMessage = errorData?.error?.message || errorData?.message || axiosError.message;
-      
-      console.error('OpenRouter Error:', {
-        status,
-        message: errorMessage,
-        details: errorData
-      });
-
-      let userFriendlyMessage = errorMessage;
-      if (status === 429) {
-        userFriendlyMessage = 'OpenRouter: Too many requests or insufficient balance. Please check your OpenRouter credits/limits.';
-      } else if (status === 401 || status === 403) {
-        userFriendlyMessage = 'Invalid API Key. Please check your OPENROUTER_API_KEY in .env';
-      }
-
-      res.status(status).json({ message: userFriendlyMessage });
     }
+
+    const reply = data?.choices?.[0]?.message?.content?.trim();
+    if (!reply) {
+      return res.status(502).json({ message: 'Chat provider returned an empty response.' });
+    }
+
+    res.json({ reply });
   } catch (err) {
     console.error('Chat Controller Error:', err);
-    res.status(500).json({ message: 'An internal server error occurred.' });
+    res.status(502).json({ message: err.message || 'Chat provider request failed.' });
   }
 };
 
