@@ -6,6 +6,7 @@ dotenv.config();
 const City = require('./models/City');
 const Place = require('./models/Place');
 const User = require('./models/User');
+const Review = require('./models/Review');
 
 const cities = [
   { name: 'İstanbul', nameEn: 'Istanbul', region: 'Marmara', location: { type: 'Point', coordinates: [28.9784, 41.0082] }, description: 'Tarihin kalbi, iki kıtanın buluşma noktası', placeCount: 0 },
@@ -403,13 +404,26 @@ const seedDB = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected to MongoDB');
 
-    // Clear existing data
+    const ensureUser = async ({ username, email, password, role = 'user' }) => {
+      let user = await User.findOne({ email });
+      if (!user) {
+        user = new User({ username, email, password, role });
+      } else {
+        user.username = username;
+        user.password = password;
+        user.role = role;
+      }
+      await user.save();
+      return user;
+    };
+
+    // Clear seed-owned data, but keep users registered through the app.
     await City.deleteMany();
     await Place.deleteMany();
-    await User.deleteMany();
+    await Review.deleteMany();
 
     // Create admin user
-    const admin = await User.create({
+    const admin = await ensureUser({
       username: 'admin',
       email: 'admin@citylore.com',
       password: 'admin123',
@@ -418,7 +432,7 @@ const seedDB = async () => {
     console.log('✅ Admin user created (email: admin@citylore.com, password: admin123)');
 
     // Create test user
-    await User.create({
+    await ensureUser({
       username: 'testuser',
       email: 'test@citylore.com',
       password: 'test123',
