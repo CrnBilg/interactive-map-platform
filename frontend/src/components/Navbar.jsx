@@ -1,15 +1,13 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { LogOut, Menu, Plus, Shield, User, X, Sun, Moon, Wifi, WifiOff } from 'lucide-react'
+import { LogOut, Menu, Plus, Shield, User, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useSocket } from '../context/SocketContext'
-import { useTheme } from '../context/ThemeContext'
 import { MapGlyph, MuseumIcon } from './visuals/Ornaments'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const { isConnected } = useSocket()
-  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -18,7 +16,6 @@ export default function Navbar() {
     logout()
     navigate('/')
   }
-
   const isActive = (path) => location.pathname === path
 
   return (
@@ -34,8 +31,8 @@ export default function Navbar() {
             to="/map"
             className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
               isActive('/map')
-                ? 'border-gold bg-gold-deep/55 text-gold-bright'
-                : 'border-gold/50 bg-gold-deep/40 text-gold-bright hover:border-gold'
+                ? 'border-gold bg-gold-deep/55 text-gold-bright shadow-[inset_0_0_12px_hsl(var(--gold-bright)_/_0.2)]'
+                : 'border-gold/50 bg-gold-deep/40 text-gold-bright shadow-[inset_0_0_12px_hsl(var(--gold-bright)_/_0.2)] hover:border-gold'
             }`}
           >
             <MapGlyph className="h-4 w-4" />
@@ -44,16 +41,8 @@ export default function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <button
-            onClick={toggleTheme}
-            className="rounded-lg border border-gold/25 p-2 text-gold-bright transition hover:border-gold/60"
-            title={theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}
-          >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-
           <div className="inline-flex items-center gap-2 rounded-full bg-gold/8 px-3 py-2 text-xs font-semibold text-gold/80">
-            {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
+            <span className={`h-2 w-2 rounded-full ${isConnected ? 'bg-lime-400 shadow-[0_0_12px_rgb(163_230_53_/_0.9)]' : 'bg-gold-deep'} live-dot`} />
             {isConnected ? 'Canlı' : 'Bağlantı yok'}
           </div>
 
@@ -73,12 +62,12 @@ export default function Navbar() {
           {user ? (
             <div className="flex items-center gap-2">
               <Link to="/profile" className="inline-flex items-center gap-2 rounded-full border border-gold/35 bg-bg-black/80 px-3 py-2 text-sm text-gold-bright">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full border border-gold/45 text-xs font-bold">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full border border-gold/45 font-bold text-xs">
                   {user.username?.[0]?.toUpperCase()}
                 </span>
                 <span className="max-w-[90px] truncate">{user.username}</span>
               </Link>
-              <button onClick={handleLogout} className="rounded-lg border border-gold/20 p-2 text-gold/70 transition hover:text-ember">
+              <button onClick={handleLogout} className="rounded-lg border border-gold/20 p-2 text-gold/70 transition hover:border-ember hover:text-ember">
                 <LogOut size={16} />
               </button>
             </div>
@@ -87,8 +76,11 @@ export default function Navbar() {
               <Link to="/login" className="rounded-lg border border-gold/45 bg-bg-black/40 px-5 py-2 text-sm font-semibold text-gold-bright transition hover:border-gold">
                 Giriş
               </Link>
-              <Link to="/register" className="rounded-lg bg-ember px-5 py-2 text-sm font-semibold text-gold-bright transition">
+              <Link to="/register" className="rounded-lg bg-ember px-5 py-2 text-sm font-semibold text-gold-bright shadow-[0_0_20px_hsl(var(--ember-red)_/_0.4)] transition hover:shadow-[0_0_28px_hsl(var(--ember-red)_/_0.55)]">
                 Kayıt
+              </Link>
+              <Link to="/profile" className="inline-flex items-center gap-2 rounded-full border border-gold/35 bg-bg-black/60 px-3 py-2 text-sm font-bold text-gold-bright">
+                CR <span className="text-gold/70">⌄</span>
               </Link>
             </>
           )}
