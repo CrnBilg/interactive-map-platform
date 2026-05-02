@@ -13,7 +13,8 @@ import { has360Imagery } from '../utils/place360'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { formatDistanceToNow } from 'date-fns'
-import { tr } from 'date-fns/locale'
+import { enUS, tr } from 'date-fns/locale'
+import { useLanguage } from '../i18n/LanguageContext'
 
 // Custom icons
 const placeIcon = L.divIcon({
@@ -44,7 +45,6 @@ function MapController({ center, zoom }) {
 }
 
 const categoryOptions = ['all', 'historical', 'museum', 'mosque', 'castle', 'ruins', 'monument', 'cultural']
-const categoryLabels = { all: 'Tümü', historical: 'Tarihi', museum: 'Müze', mosque: 'Cami', castle: 'Kale', ruins: 'Harabe', monument: 'Anıt', cultural: 'Kültürel' }
 
 const getWeatherIcon = (code) => {
   if (code === 0) return <Sun size={14} className="text-amber-400" />
@@ -63,9 +63,13 @@ const formatDistance = (m) => {
   return `${(m / 1000).toFixed(1)} km`
 }
 
-const formatTime = (s) => {
+const formatTime = (s, language = 'tr') => {
   const h = Math.floor(s / 3600)
   const m = Math.floor((s % 3600) / 60)
+  if (language === 'en') {
+    if (h > 0) return `${h} hr ${m} min`
+    return `${m} min`
+  }
   if (h > 0) return `${h} sa ${m} dk`
   return `${m} dk`
 }
@@ -73,6 +77,7 @@ const formatTime = (s) => {
 const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
 
 export default function MapPage() {
+  const { language, t, translateCity, translatePlace, translateEvent } = useLanguage()
   const { user } = useAuth()
   const { liveEvents, setLiveEvents, joinCity, leaveCity } = useSocket()
   const { routePlaces, addToRoute, removeFromRoute, clearRoute } = useRoute()
@@ -201,7 +206,7 @@ export default function MapPage() {
   const handleEventCreated = (event) => {
     setLiveEvents(prev => [event, ...prev])
     setShowEventForm(false)
-    toast.success('Etkinlik bildirildi! 🎉')
+    toast.success(t('map.eventReported'))
   }
 
   const waypoints = routePlaces.map(p => [p.location.coordinates[1], p.location.coordinates[0]])
@@ -216,7 +221,7 @@ export default function MapPage() {
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500" />
             <input
               className="input pl-9 text-sm py-2"
-              placeholder="Mekan ara..."
+              placeholder={t('map.search')}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
@@ -226,7 +231,7 @@ export default function MapPage() {
         {/* Cities */}
         <div className="p-3 border-b border-stone-200 dark:border-stone-800">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wider">Şehir Seç</div>
+            <div className="text-xs font-medium text-stone-400 dark:text-stone-500 uppercase tracking-wider">{t('map.selectCity')}</div>
             {weather && (
               <div className="flex items-center gap-1.5 px-2 py-0.5 bg-stone-100 dark:bg-stone-800 rounded-full border border-stone-200 dark:border-stone-700 transition-colors">
                 {getWeatherIcon(weather.weathercode)}
@@ -238,13 +243,13 @@ export default function MapPage() {
             <button
               onClick={() => { setSelectedCity(null); setMapCenter([39.1, 35.0]); setMapZoom(6) }}
               className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${!selectedCity ? 'bg-amber-500 text-stone-950 font-semibold shadow-sm' : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}`}
-            >Tüm Türkiye</button>
+            >{t('common.allTurkey')}</button>
             {cities.map(city => (
               <button
                 key={city._id}
                 onClick={() => handleCitySelect(city)}
                 className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${selectedCity?._id === city._id ? 'bg-amber-500 text-stone-950 font-semibold shadow-sm' : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}`}
-              >{city.name}</button>
+              >{translateCity(city).displayName}</button>
             ))}
           </div>
         </div>
@@ -259,8 +264,8 @@ export default function MapPage() {
               <div className="flex items-center gap-2">
                 <CloudRain size={16} className="text-blue-500 dark:text-blue-400 animate-bounce" />
                 <div className="text-left">
-                  <div className="text-[11px] font-bold text-blue-600 dark:text-blue-400 leading-none">Yağmurlu Hava Önerisi</div>
-                  <div className="text-[10px] text-blue-500/70 dark:text-blue-300/70 mt-0.5">Kapalı mekanları keşfet</div>
+                  <div className="text-[11px] font-bold text-blue-600 dark:text-blue-400 leading-none">{t('map.rainyTitle')}</div>
+                  <div className="text-[10px] text-blue-500/70 dark:text-blue-300/70 mt-0.5">{t('map.rainyText')}</div>
                 </div>
               </div>
               <Plus size={14} className="text-blue-500 dark:text-blue-400 group-hover:rotate-90 transition-transform" />
@@ -273,11 +278,11 @@ export default function MapPage() {
           <button
             onClick={() => setShowPlaces(!showPlaces)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors flex-1 justify-center ${showPlaces ? 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30' : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'}`}
-          >🏛️ Mekanlar ({places.length})</button>
+          >🏛️ {t('map.places')} ({places.length})</button>
           <button
             onClick={() => setShowEvents(!showEvents)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors flex-1 justify-center ${showEvents ? 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30' : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'}`}
-          >⚡ Canlı ({liveEvents.length})</button>
+          >⚡ {t('map.live')} ({liveEvents.length})</button>
         </div>
 
         {/* Route Section */}
@@ -285,7 +290,7 @@ export default function MapPage() {
           <div className="p-3 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between bg-white dark:bg-stone-900/50">
             <div className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2">
               <Navigation size={14} />
-              Gezi Rotam ({routePlaces.length})
+              {t('map.myRoute')} ({routePlaces.length})
             </div>
             {routePlaces.length > 0 && (
               <button onClick={clearRoute} className="text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
@@ -301,7 +306,7 @@ export default function MapPage() {
                   <Navigation size={20} />
                 </div>
                 <p className="text-stone-400 dark:text-stone-500 text-xs leading-relaxed">
-                  Henüz rota oluşturulmadı.<br/>Haritadan mekan seçip "Rotaya Ekle" butonuna basarak başlayın.
+                  {t('map.emptyRoute')}<br/>{t('map.emptyRouteHint')}
                 </p>
               </div>
             ) : (
@@ -312,8 +317,8 @@ export default function MapPage() {
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-stone-800 dark:text-stone-200 truncate">{place.name}</div>
-                      <div className="text-[10px] text-stone-400 dark:text-stone-500">{place.city}</div>
+                      <div className="text-sm font-medium text-stone-800 dark:text-stone-200 truncate">{translatePlace(place).displayName}</div>
+                      <div className="text-[10px] text-stone-400 dark:text-stone-500">{translatePlace(place).displayCity}</div>
                     </div>
                     <button 
                       onClick={() => removeFromRoute(place._id)}
@@ -329,10 +334,10 @@ export default function MapPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
                         <Car size={14} className="text-amber-500" />
-                        <span className="text-xs">Sürüş</span>
+                        <span className="text-xs">{t('map.driving')}</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm font-bold text-amber-600 dark:text-amber-500">{formatTime(routeSummary.time)}</div>
+                        <div className="text-sm font-bold text-amber-600 dark:text-amber-500">{formatTime(routeSummary.time, language)}</div>
                         <div className="text-[10px] text-stone-400 dark:text-stone-600 font-mono">{formatDistance(routeSummary.distance)}</div>
                       </div>
                     </div>
@@ -342,11 +347,11 @@ export default function MapPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400">
                         <Footprints size={14} className="text-emerald-500" />
-                        <span className="text-xs">Yürüyüş</span>
+                        <span className="text-xs">{t('map.walking')}</span>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-bold text-emerald-600 dark:text-emerald-500">
-                          {walkingSummary ? formatTime(walkingSummary.time) : '...'}
+                          {walkingSummary ? formatTime(walkingSummary.time, language) : '...'}
                         </div>
                         <div className="text-[10px] text-stone-400 dark:text-stone-600 font-mono">
                           {walkingSummary ? formatDistance(walkingSummary.distance) : '...'}
@@ -423,15 +428,15 @@ export default function MapPage() {
             >
               <Popup>
                 <div className="min-w-[200px]">
-                  <div className="font-semibold text-stone-100 text-sm mb-1">{place.name}</div>
-                  <div className="text-stone-400 text-xs mb-3 line-clamp-2">{place.description}</div>
+                  <div className="font-semibold text-stone-100 text-sm mb-1">{translatePlace(place).displayName}</div>
+                  <div className="text-stone-400 text-xs mb-3 line-clamp-2">{translatePlace(place).displayDescription}</div>
                   
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => addToRoute(place)}
                       className="flex-1 bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1"
                     >
-                      <Plus size={12} /> Rotaya Ekle
+                      <Plus size={12} /> {t('map.addToRoute')}
                     </button>
                     {has360Imagery(place) && (
                       <button
@@ -444,7 +449,7 @@ export default function MapPage() {
                     )}
                   </div>
                   <Link to={`/place/${place._id}`} className="block text-center text-stone-500 text-[10px] mt-2 hover:text-stone-300 transition-colors">
-                    Detayları Görüntüle →
+                    {t('map.viewDetails')}
                   </Link>
                 </div>
               </Popup>
@@ -458,12 +463,12 @@ export default function MapPage() {
                 <div className="min-w-[180px]">
                   <div className="flex items-center gap-1 mb-1">
                     <span className="live-dot w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-                    <span className="text-emerald-400 text-xs">Canlı Etkinlik</span>
+                    <span className="text-emerald-400 text-xs">{t('map.liveEvent')}</span>
                   </div>
-                  <div className="font-semibold text-stone-100 text-sm">{event.title}</div>
-                  <div className="text-stone-400 text-xs mt-1">{event.description}</div>
+                  <div className="font-semibold text-stone-100 text-sm">{translateEvent(event).displayTitle}</div>
+                  <div className="text-stone-400 text-xs mt-1">{translateEvent(event).displayDescription}</div>
                   <div className="text-stone-500 text-xs mt-1">
-                    {formatDistanceToNow(new Date(event.createdAt), { addSuffix: true, locale: tr })}
+                    {formatDistanceToNow(new Date(event.createdAt), { addSuffix: true, locale: language === 'tr' ? tr : enUS })}
                   </div>
                 </div>
               </Popup>
@@ -477,7 +482,7 @@ export default function MapPage() {
             onClick={() => setShowEventForm(true)}
             className="absolute bottom-6 right-6 z-[1000] flex items-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full shadow-2xl transition-all active:scale-95 font-medium text-sm"
           >
-            <Zap size={16} /> Etkinlik Bildir
+            <Zap size={16} /> {t('map.reportEvent')}
           </button>
         )}
       </div>

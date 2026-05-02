@@ -2,18 +2,21 @@ import { useState } from 'react'
 import { eventsAPI } from '../services/api'
 import { X, Zap, MapPin } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useLanguage } from '../i18n/LanguageContext'
 
 const eventTypes = [
-  { value: 'concert', label: '🎵 Konser' },
-  { value: 'flashmob', label: '💃 Flash Mob' },
-  { value: 'popup', label: '🛍️ Pop-up Market' },
-  { value: 'exhibition', label: '🎨 Sergi' },
-  { value: 'festival', label: '🎉 Festival' },
-  { value: 'protest', label: '📢 Gösteri' },
-  { value: 'other', label: '⚡ Diğer' },
+  { value: 'concert' },
+  { value: 'flashmob' },
+  { value: 'popup' },
+  { value: 'exhibition' },
+  { value: 'festival' },
+  { value: 'protest' },
+  { value: 'other' },
 ]
 
 export default function EventForm({ selectedCity, onClose, onCreated }) {
+  const { t, translateCity } = useLanguage()
+  const displayCity = translateCity(selectedCity)
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -29,7 +32,7 @@ export default function EventForm({ selectedCity, onClose, onCreated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.lat || !form.lng) { toast.error('Koordinat giriniz'); return }
+    if (!form.lat || !form.lng) { toast.error(t('toast.coordinatesEnter')); return }
     setLoading(true)
     try {
       const { data } = await eventsAPI.create({
@@ -39,7 +42,7 @@ export default function EventForm({ selectedCity, onClose, onCreated }) {
       })
       onCreated(data)
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Hata oluştu')
+      toast.error(err.response?.data?.message || t('toast.error'))
     } finally {
       setLoading(false)
     }
@@ -55,8 +58,8 @@ export default function EventForm({ selectedCity, onClose, onCreated }) {
               <Zap size={16} className="text-emerald-400" />
             </div>
             <div>
-              <h2 className="font-semibold text-stone-100">Etkinlik Bildir</h2>
-              {selectedCity && <p className="text-stone-500 text-xs">{selectedCity.name}</p>}
+              <h2 className="font-semibold text-stone-100">{t('eventForm.title')}</h2>
+              {selectedCity && <p className="text-stone-500 text-xs">{displayCity.displayName}</p>}
             </div>
           </div>
           <button onClick={onClose} className="text-stone-500 hover:text-stone-300 transition-colors p-1">
@@ -66,10 +69,10 @@ export default function EventForm({ selectedCity, onClose, onCreated }) {
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="block text-stone-400 text-sm mb-1.5">Etkinlik Adı *</label>
+            <label className="block text-stone-400 text-sm mb-1.5">{t('eventForm.eventName')}</label>
             <input
               className="input"
-              placeholder="Açık hava caz konseri"
+              placeholder={t('eventForm.eventNamePlaceholder')}
               value={form.title}
               onChange={e => set('title', e.target.value)}
               required
@@ -77,9 +80,9 @@ export default function EventForm({ selectedCity, onClose, onCreated }) {
           </div>
 
           <div>
-            <label className="block text-stone-400 text-sm mb-1.5">Tür *</label>
+            <label className="block text-stone-400 text-sm mb-1.5">{t('eventForm.type')}</label>
             <div className="grid grid-cols-2 gap-2">
-              {eventTypes.map(({ value, label }) => (
+              {eventTypes.map(({ value }) => (
                 <button
                   key={value}
                   type="button"
@@ -90,18 +93,18 @@ export default function EventForm({ selectedCity, onClose, onCreated }) {
                       : 'bg-stone-800 border-stone-700 text-stone-400 hover:border-stone-600'
                   }`}
                 >
-                  {label}
+                  {t(`eventTypes.${value}`)}
                 </button>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="block text-stone-400 text-sm mb-1.5">Açıklama *</label>
+            <label className="block text-stone-400 text-sm mb-1.5">{t('eventForm.description')}</label>
             <textarea
               className="input resize-none"
               rows={2}
-              placeholder="Etkinlik hakkında kısa bilgi..."
+              placeholder={t('eventForm.descriptionPlaceholder')}
               value={form.description}
               onChange={e => set('description', e.target.value)}
               required
@@ -110,10 +113,10 @@ export default function EventForm({ selectedCity, onClose, onCreated }) {
           </div>
 
           <div>
-            <label className="block text-stone-400 text-sm mb-1.5">Adres</label>
+            <label className="block text-stone-400 text-sm mb-1.5">{t('addPlace.address')}</label>
             <input
               className="input"
-              placeholder="Taksim Meydanı"
+              placeholder={t('eventForm.addressPlaceholder')}
               value={form.address}
               onChange={e => set('address', e.target.value)}
             />
@@ -121,7 +124,7 @@ export default function EventForm({ selectedCity, onClose, onCreated }) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-stone-400 text-sm mb-1.5">Enlem *</label>
+              <label className="block text-stone-400 text-sm mb-1.5">{t('eventForm.latitude')}</label>
               <input
                 className="input text-sm"
                 placeholder="41.0082"
@@ -133,7 +136,7 @@ export default function EventForm({ selectedCity, onClose, onCreated }) {
               />
             </div>
             <div>
-              <label className="block text-stone-400 text-sm mb-1.5">Boylam *</label>
+              <label className="block text-stone-400 text-sm mb-1.5">{t('eventForm.longitude')}</label>
               <input
                 className="input text-sm"
                 placeholder="28.9784"
@@ -147,11 +150,11 @@ export default function EventForm({ selectedCity, onClose, onCreated }) {
           </div>
 
           <p className="text-stone-600 text-xs flex items-center gap-1">
-            <MapPin size={10} /> Şehir merkezi koordinatları otomatik dolduruldu. Düzenleyebilirsiniz.
+            <MapPin size={10} /> {t('eventForm.coordsHint')}
           </p>
 
           <div>
-            <label className="block text-stone-400 text-sm mb-1.5">Başlangıç Zamanı *</label>
+            <label className="block text-stone-400 text-sm mb-1.5">{t('eventForm.startTime')}</label>
             <input
               className="input"
               type="datetime-local"
@@ -168,10 +171,10 @@ export default function EventForm({ selectedCity, onClose, onCreated }) {
               className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold py-2.5 rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <Zap size={15} />
-              {loading ? 'Bildiriliyor...' : 'Canlı Bildir'}
+              {loading ? t('eventForm.reporting') : t('eventForm.reportLive')}
             </button>
             <button type="button" onClick={onClose} className="btn-secondary px-4">
-              İptal
+              {t('common.cancel')}
             </button>
           </div>
         </form>

@@ -3,11 +3,13 @@ import { useState } from 'react'
 import { LogOut, Menu, Plus, Shield, User, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useSocket } from '../context/SocketContext'
+import { useLanguage } from '../i18n/LanguageContext'
 import { MapGlyph, MuseumIcon } from './visuals/Ornaments'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const { isConnected } = useSocket()
+  const { language, t, toggleLanguage } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -17,6 +19,7 @@ export default function Navbar() {
     navigate('/')
   }
   const isActive = (path) => location.pathname === path
+  const nextLanguageLabel = language === 'tr' ? 'EN' : 'TR'
 
   return (
     <nav className="sticky top-0 z-50 h-[72px] border-b border-gold/15 bg-gradient-to-b from-bg-black via-bg-black/92 to-bg-black/55 backdrop-blur-xl">
@@ -36,14 +39,14 @@ export default function Navbar() {
             }`}
           >
             <MapGlyph className="h-4 w-4" />
-            Harita
+            {t('nav.map')}
           </Link>
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
           <div className="inline-flex items-center gap-2 rounded-full bg-gold/8 px-3 py-2 text-xs font-semibold text-gold/80">
             <span className={`h-2 w-2 rounded-full ${isConnected ? 'bg-lime-400 shadow-[0_0_12px_rgb(163_230_53_/_0.9)]' : 'bg-gold-deep'} live-dot`} />
-            {isConnected ? 'Canlı' : 'Bağlantı yok'}
+            {isConnected ? t('nav.connected') : t('nav.disconnected')}
           </div>
 
           {user && (
@@ -74,16 +77,17 @@ export default function Navbar() {
           ) : (
             <>
               <Link to="/login" className="rounded-lg border border-gold/45 bg-bg-black/40 px-5 py-2 text-sm font-semibold text-gold-bright transition hover:border-gold">
-                Giriş
+                {t('nav.login')}
               </Link>
               <Link to="/register" className="rounded-lg bg-ember px-5 py-2 text-sm font-semibold text-gold-bright shadow-[0_0_20px_hsl(var(--ember-red)_/_0.4)] transition hover:shadow-[0_0_28px_hsl(var(--ember-red)_/_0.55)]">
-                Kayıt
-              </Link>
-              <Link to="/profile" className="inline-flex items-center gap-2 rounded-full border border-gold/35 bg-bg-black/60 px-3 py-2 text-sm font-bold text-gold-bright">
-                CR <span className="text-gold/70">⌄</span>
+                {t('nav.register')}
               </Link>
             </>
           )}
+
+          <button onClick={toggleLanguage} className="inline-flex items-center gap-2 rounded-full border border-gold/35 bg-bg-black/60 px-3 py-2 text-sm font-bold text-gold-bright">
+            {nextLanguageLabel}
+          </button>
         </div>
 
         <button className="md:hidden rounded-lg border border-gold/25 p-2 text-gold-bright" onClick={() => setMenuOpen(!menuOpen)}>
@@ -94,21 +98,24 @@ export default function Navbar() {
       {menuOpen && (
         <div className="md:hidden border-t border-gold/15 bg-bg-black px-4 py-3">
           <Link to="/map" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10">
-            <MapGlyph className="h-4 w-4" /> Harita
+            <MapGlyph className="h-4 w-4" /> {t('nav.map')}
           </Link>
-          {user && <Link to="/add-place" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10"><Plus size={16} /> Yer Ekle</Link>}
-          {user?.role === 'admin' && <Link to="/admin" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10"><Shield size={16} /> Admin</Link>}
+          {user && <Link to="/add-place" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10"><Plus size={16} /> {t('nav.addPlace')}</Link>}
+          {user?.role === 'admin' && <Link to="/admin" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10"><Shield size={16} /> {t('common.admin')}</Link>}
           {user ? (
             <>
-              <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10"><User size={16} /> Profil</Link>
-              <button onClick={() => { handleLogout(); setMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-ember hover:bg-gold/10"><LogOut size={16} /> Çıkış</button>
+              <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10"><User size={16} /> {t('nav.profile')}</Link>
+              <button onClick={() => { handleLogout(); setMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-ember hover:bg-gold/10"><LogOut size={16} /> {t('nav.logout')}</button>
             </>
           ) : (
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <Link to="/login" onClick={() => setMenuOpen(false)} className="btn-secondary text-center text-sm">Giriş</Link>
-              <Link to="/register" onClick={() => setMenuOpen(false)} className="btn-primary text-center text-sm">Kayıt</Link>
+              <Link to="/login" onClick={() => setMenuOpen(false)} className="btn-secondary text-center text-sm">{t('nav.login')}</Link>
+              <Link to="/register" onClick={() => setMenuOpen(false)} className="btn-primary text-center text-sm">{t('nav.register')}</Link>
             </div>
           )}
+          <button onClick={toggleLanguage} className="mt-2 flex w-full items-center justify-center rounded-lg border border-gold/35 bg-bg-black/60 px-3 py-2 text-sm font-bold text-gold-bright">
+            {nextLanguageLabel}
+          </button>
         </div>
       )}
     </nav>

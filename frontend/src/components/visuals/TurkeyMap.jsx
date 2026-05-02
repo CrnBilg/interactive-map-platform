@@ -1,3 +1,5 @@
+import { useLanguage } from '../../i18n/LanguageContext'
+
 const turkeyPath =
   'M47 175C56 139 94 125 129 132C158 104 208 98 253 112C290 92 350 94 392 108C430 88 491 92 532 114C579 111 633 128 675 158C708 181 713 220 684 246C651 276 598 271 566 254C531 287 470 291 427 268C383 294 324 290 287 263C243 280 193 273 165 248C119 267 75 247 55 213C45 198 42 186 47 175Z'
 
@@ -30,6 +32,7 @@ const minorCities = [
 ]
 
 function CityNode({ city, size = 'major', delay = 0, showLabels = true }) {
+  const { translateEntity } = useLanguage()
   const isMajor = size === 'major'
   const core = isMajor ? 14 : 8
   const halo = isMajor ? 24 : 16
@@ -48,7 +51,7 @@ function CityNode({ city, size = 'major', delay = 0, showLabels = true }) {
         <>
           <path d={`M${city.x + 7} ${city.y - 6}h22`} stroke="hsl(var(--gold) / .3)" strokeWidth="1" />
           <text x={city.x + 33} y={city.y - 8} className="fill-gold-bright text-[11px] font-semibold tracking-[0.05em]">
-            {city.name}
+            {translateEntity(city.name)}
           </text>
         </>
       )}

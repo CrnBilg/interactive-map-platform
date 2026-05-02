@@ -4,12 +4,13 @@ import { placesAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 import { MapPin } from 'lucide-react'
+import { useLanguage } from '../i18n/LanguageContext'
 
 const categories = ['historical', 'museum', 'mosque', 'castle', 'ruins', 'monument', 'cultural', 'other']
-const categoryLabels = { historical: 'Tarihi', museum: 'Müze', mosque: 'Cami', castle: 'Kale', ruins: 'Harabe', monument: 'Anıt', cultural: 'Kültürel', other: 'Diğer' }
 
 export default function AddPlacePage() {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
   const [form, setForm] = useState({
     name: '', description: '', category: 'historical', city: '',
@@ -24,7 +25,7 @@ export default function AddPlacePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.lat || !form.lng) { toast.error('Koordinat girilmeli'); return }
+    if (!form.lat || !form.lng) { toast.error(t('toast.coordinatesRequired')); return }
     setLoading(true)
     try {
       const payload = {
@@ -42,10 +43,10 @@ export default function AddPlacePage() {
         },
       }
       const { data } = await placesAPI.create(payload)
-      toast.success('Mekan eklendi!')
+      toast.success(t('addPlace.added'))
       navigate(`/place/${data._id}`)
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Hata oluştu')
+      toast.error(err.response?.data?.message || t('toast.error'))
     } finally {
       setLoading(false)
     }
@@ -55,77 +56,77 @@ export default function AddPlacePage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in">
-      <h1 className="font-display text-3xl font-bold text-stone-100 mb-2">Yeni Mekan Ekle</h1>
-      <p className="text-stone-500 mb-8">Türkiye'nin tarihi zenginliklerine katkıda bulun</p>
+      <h1 className="font-display text-3xl font-bold text-stone-100 mb-2">{t('addPlace.title')}</h1>
+      <p className="text-stone-500 mb-8">{t('addPlace.subtitle')}</p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="card p-5 space-y-4">
-          <h3 className="font-semibold text-stone-200">Temel Bilgiler</h3>
+          <h3 className="font-semibold text-stone-200">{t('addPlace.basic')}</h3>
           <div>
-            <label className="block text-stone-400 text-sm mb-1.5">Mekan Adı *</label>
-            <input className="input" placeholder="Ayasofya" value={form.name} onChange={e => set('name', e.target.value)} required />
+            <label className="block text-stone-400 text-sm mb-1.5">{t('addPlace.name')}</label>
+            <input className="input" placeholder={t('addPlace.namePlaceholder')} value={form.name} onChange={e => set('name', e.target.value)} required />
           </div>
           <div>
-            <label className="block text-stone-400 text-sm mb-1.5">Açıklama *</label>
-            <textarea className="input resize-none" rows={4} placeholder="Mekan hakkında detaylı bilgi..." value={form.description} onChange={e => set('description', e.target.value)} required minLength={20} />
+            <label className="block text-stone-400 text-sm mb-1.5">{t('addPlace.description')}</label>
+            <textarea className="input resize-none" rows={4} placeholder={t('addPlace.descriptionPlaceholder')} value={form.description} onChange={e => set('description', e.target.value)} required minLength={20} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-stone-400 text-sm mb-1.5">Kategori *</label>
+              <label className="block text-stone-400 text-sm mb-1.5">{t('common.category')} *</label>
               <select className="input" value={form.category} onChange={e => set('category', e.target.value)}>
-                {categories.map(c => <option key={c} value={c}>{categoryLabels[c]}</option>)}
+                {categories.map(c => <option key={c} value={c}>{t(`categories.${c}`)}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-stone-400 text-sm mb-1.5">Dönem</label>
+              <label className="block text-stone-400 text-sm mb-1.5">{t('addPlace.period')}</label>
               <input className="input" placeholder="Ottoman, Byzantine, Roman..." value={form.period} onChange={e => set('period', e.target.value)} />
             </div>
           </div>
         </div>
 
         <div className="card p-5 space-y-4">
-          <h3 className="font-semibold text-stone-200">Konum</h3>
+          <h3 className="font-semibold text-stone-200">{t('addPlace.location')}</h3>
           <div>
-            <label className="block text-stone-400 text-sm mb-1.5">Şehir *</label>
-            <input className="input" placeholder="İstanbul" value={form.city} onChange={e => set('city', e.target.value)} required />
+            <label className="block text-stone-400 text-sm mb-1.5">{t('common.city')} *</label>
+            <input className="input" placeholder={t('addPlace.cityPlaceholder')} value={form.city} onChange={e => set('city', e.target.value)} required />
           </div>
           <div>
-            <label className="block text-stone-400 text-sm mb-1.5">Adres</label>
-            <input className="input" placeholder="Sultanahmet, Fatih/İstanbul" value={form.address} onChange={e => set('address', e.target.value)} />
+            <label className="block text-stone-400 text-sm mb-1.5">{t('addPlace.address')}</label>
+            <input className="input" placeholder={t('addPlace.addressPlaceholder')} value={form.address} onChange={e => set('address', e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-stone-400 text-sm mb-1.5">Enlem (Lat) *</label>
+              <label className="block text-stone-400 text-sm mb-1.5">{t('addPlace.latitude')}</label>
               <input className="input" placeholder="41.0086" type="number" step="any" value={form.lat} onChange={e => set('lat', e.target.value)} required />
             </div>
             <div>
-              <label className="block text-stone-400 text-sm mb-1.5">Boylam (Lng) *</label>
+              <label className="block text-stone-400 text-sm mb-1.5">{t('addPlace.longitude')}</label>
               <input className="input" placeholder="28.9800" type="number" step="any" value={form.lng} onChange={e => set('lng', e.target.value)} required />
             </div>
           </div>
           <p className="text-stone-600 text-xs flex items-center gap-1">
-            <MapPin size={11} /> OpenStreetMap veya başka bir harita uygulamasında mekanı açıp koordinatları kopyalayabilirsiniz.
+            <MapPin size={11} /> {t('addPlace.coordsHint')}
           </p>
         </div>
 
         <div className="card p-5 space-y-4">
-          <h3 className="font-semibold text-stone-200">Detaylar</h3>
+          <h3 className="font-semibold text-stone-200">{t('addPlace.details')}</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-stone-400 text-sm mb-1.5">Giriş Ücreti (₺)</label>
-              <input className="input" type="number" min={0} placeholder="0 = Ücretsiz" value={form.entryFee} onChange={e => set('entryFee', e.target.value)} />
+              <label className="block text-stone-400 text-sm mb-1.5">{t('addPlace.entryFee')}</label>
+              <input className="input" type="number" min={0} placeholder={t('addPlace.entryFeePlaceholder')} value={form.entryFee} onChange={e => set('entryFee', e.target.value)} />
             </div>
             <div>
-              <label className="block text-stone-400 text-sm mb-1.5">Çalışma Saatleri</label>
+              <label className="block text-stone-400 text-sm mb-1.5">{t('addPlace.openingHours')}</label>
               <input className="input" placeholder="09:00 - 18:00" value={form.openingHours} onChange={e => set('openingHours', e.target.value)} />
             </div>
           </div>
           <div>
-            <label className="block text-stone-400 text-sm mb-1.5">Web Sitesi</label>
+            <label className="block text-stone-400 text-sm mb-1.5">{t('common.website')}</label>
             <input className="input" type="url" placeholder="https://..." value={form.website} onChange={e => set('website', e.target.value)} />
           </div>
           <div>
-            <label className="block text-stone-400 text-sm mb-1.5">Fotoğraf URL'leri (her satıra bir tane)</label>
+            <label className="block text-stone-400 text-sm mb-1.5">{t('addPlace.imageUrls')}</label>
             <textarea className="input resize-none font-mono text-xs" rows={3} placeholder="https://upload.wikimedia.org/..." value={form.images} onChange={e => set('images', e.target.value)} />
           </div>
         </div>
@@ -133,7 +134,7 @@ export default function AddPlacePage() {
         <div className="card p-5 space-y-4">
           <h3 className="font-semibold text-stone-200">360 / Street-Level View</h3>
           <p className="text-stone-500 text-xs leading-relaxed">
-            Optional. Google Maps Embed Street View is used automatically when the frontend has a Google Embed API key. Panoramax or a hosted 360 URL can be added as a fallback.
+            {t('addPlace.streetHelp')}
           </p>
           <div>
             <label className="block text-stone-400 text-sm mb-1.5">Panoramax Image ID</label>
@@ -149,7 +150,7 @@ export default function AddPlacePage() {
           </div>
           <div className="border-t border-stone-800 pt-4 space-y-4">
             <p className="text-stone-500 text-xs leading-relaxed">
-              Optional Google camera settings. Use these when the default panorama opens facing away from the place.
+              {t('addPlace.cameraHelp')}
             </p>
             <div>
               <label className="block text-stone-400 text-sm mb-1.5">Google Panorama ID</label>
@@ -177,7 +178,7 @@ export default function AddPlacePage() {
         </div>
 
         <button type="submit" disabled={loading} className="btn-primary w-full py-3 text-base disabled:opacity-50">
-          {loading ? 'Ekleniyor...' : '🏛️ Mekanı Ekle'}
+          {loading ? t('addPlace.adding') : t('addPlace.add')}
         </button>
       </form>
     </div>
