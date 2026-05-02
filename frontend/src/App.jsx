@@ -14,6 +14,7 @@ import CityPage from './pages/CityPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ProfilePage from './pages/ProfilePage'
+import SavedPlacesPage from './pages/SavedPlacesPage'
 import AddPlacePage from './pages/AddPlacePage'
 import AdminPage from './pages/AdminPage'
 import ChatbotWidget from './components/ChatbotWidget'
@@ -36,6 +37,7 @@ export default function App() {
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/saved-places" element={<SavedPlacesPage />} />
                   <Route path="/add-place" element={<AddPlacePage />} />
                   <Route path="/admin" element={<AdminPage />} />
                 </Routes>
