@@ -1,6 +1,12 @@
 const Place = require('../models/Place');
 const City = require('../models/City');
 
+const optionalNumber = (value, fallback) => {
+  if (value === undefined || value === null || value === '') return fallback;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+};
+
 // @GET /api/places
 const getPlaces = async (req, res) => {
   try {
@@ -90,11 +96,11 @@ const createPlace = async (req, res) => {
       panoramaItems: Array.isArray(panoramaItems) ? panoramaItems.filter(item => item?.url) : [],
       streetView: {
         panoId: streetView?.panoId || '',
-        heading: Number.isFinite(Number(streetView?.heading)) ? Number(streetView.heading) : 0,
-        pitch: Number.isFinite(Number(streetView?.pitch)) ? Number(streetView.pitch) : 0,
-        fov: Number.isFinite(Number(streetView?.fov)) ? Number(streetView.fov) : 80,
-        radius: Number.isFinite(Number(streetView?.radius)) ? Number(streetView.radius) : 50,
-        maxDistance: Number.isFinite(Number(streetView?.maxDistance)) ? Number(streetView.maxDistance) : 50,
+        heading: optionalNumber(streetView?.heading, 0),
+        pitch: optionalNumber(streetView?.pitch, 0),
+        fov: optionalNumber(streetView?.fov, 80),
+        radius: optionalNumber(streetView?.radius, 500),
+        maxDistance: optionalNumber(streetView?.maxDistance, 500),
       },
       addedBy: req.user._id,
     });

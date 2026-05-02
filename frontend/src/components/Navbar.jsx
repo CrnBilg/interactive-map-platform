@@ -1,100 +1,121 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { LogOut, Menu, Plus, Shield, User, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useSocket } from '../context/SocketContext'
-import { Map, Landmark, Plus, User, LogOut, Shield, Wifi, WifiOff, Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { useLanguage } from '../i18n/LanguageContext'
+import { MapGlyph, MuseumIcon } from './visuals/Ornaments'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const { isConnected } = useSocket()
+  const { language, t, toggleLanguage } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
 
-  const handleLogout = () => { logout(); navigate('/') }
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
   const isActive = (path) => location.pathname === path
+  const nextLanguageLabel = language === 'tr' ? 'EN' : 'TR'
 
   return (
-    <nav className="sticky top-0 z-50 bg-stone-950/90 backdrop-blur-md border-b border-stone-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
-              <Landmark size={16} className="text-stone-950" />
-            </div>
-            <span className="font-display text-xl font-bold text-stone-100">CityLore</span>
+    <nav className="sticky top-0 z-50 h-[72px] border-b border-gold/15 bg-gradient-to-b from-bg-black via-bg-black/92 to-bg-black/55 backdrop-blur-xl">
+      <div className="mx-auto flex h-full max-w-[1500px] items-center justify-between px-4 sm:px-8 lg:px-16">
+        <Link to="/" className="flex items-center gap-3 text-gold-bright">
+          <MuseumIcon className="h-7 w-7 text-gold" />
+          <span className="font-display text-[22px] font-bold">CityLore</span>
+        </Link>
+
+        <div className="absolute left-1/2 hidden -translate-x-1/2 md:block">
+          <Link
+            to="/map"
+            className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+              isActive('/map')
+                ? 'border-gold bg-gold-deep/55 text-gold-bright shadow-[inset_0_0_12px_hsl(var(--gold-bright)_/_0.2)]'
+                : 'border-gold/50 bg-gold-deep/40 text-gold-bright shadow-[inset_0_0_12px_hsl(var(--gold-bright)_/_0.2)] hover:border-gold'
+            }`}
+          >
+            <MapGlyph className="h-4 w-4" />
+            {t('nav.map')}
           </Link>
+        </div>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
-            <Link to="/map" className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors ${isActive('/map') ? 'bg-stone-800 text-amber-400' : 'text-stone-400 hover:text-stone-100 hover:bg-stone-800/50'}`}>
-              <Map size={15} /> Harita
-            </Link>
-            {user && (
-              <Link to="/add-place" className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors ${isActive('/add-place') ? 'bg-stone-800 text-amber-400' : 'text-stone-400 hover:text-stone-100 hover:bg-stone-800/50'}`}>
-                <Plus size={15} /> Yer Ekle
-              </Link>
-            )}
-            {user?.role === 'admin' && (
-              <Link to="/admin" className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-colors ${isActive('/admin') ? 'bg-stone-800 text-amber-400' : 'text-stone-400 hover:text-stone-100 hover:bg-stone-800/50'}`}>
-                <Shield size={15} /> Admin
-              </Link>
-            )}
+        <div className="hidden items-center gap-3 md:flex">
+          <div className="inline-flex items-center gap-2 rounded-full bg-gold/8 px-3 py-2 text-xs font-semibold text-gold/80">
+            <span className={`h-2 w-2 rounded-full ${isConnected ? 'bg-lime-400 shadow-[0_0_12px_rgb(163_230_53_/_0.9)]' : 'bg-gold-deep'} live-dot`} />
+            {isConnected ? t('nav.connected') : t('nav.disconnected')}
           </div>
 
-          {/* Right side */}
-          <div className="hidden md:flex items-center gap-3">
-            {/* Live indicator */}
-            <div className={`flex items-center gap-1.5 text-xs ${isConnected ? 'text-emerald-400' : 'text-stone-600'}`}>
-              {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
-              <span>{isConnected ? 'Canlı' : 'Bağlantı yok'}</span>
-            </div>
-
-            {user ? (
-              <div className="flex items-center gap-2">
-                <Link to="/profile" className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 transition-colors text-sm">
-                  <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-stone-950 font-bold text-xs">
-                    {user.username?.[0]?.toUpperCase()}
-                  </div>
-                  <span>{user.username}</span>
+          {user && (
+            <>
+              <Link to="/add-place" className="rounded-lg border border-gold/25 px-3 py-2 text-sm text-gold-bright/80 transition hover:border-gold/60">
+                <Plus size={15} />
+              </Link>
+              {user.role === 'admin' && (
+                <Link to="/admin" className="rounded-lg border border-gold/25 px-3 py-2 text-sm text-gold-bright/80 transition hover:border-gold/60">
+                  <Shield size={15} />
                 </Link>
-                <button onClick={handleLogout} className="p-2 rounded-lg text-stone-500 hover:text-red-400 hover:bg-stone-800 transition-colors">
-                  <LogOut size={16} />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link to="/login" className="btn-secondary text-sm py-1.5 px-4">Giriş</Link>
-                <Link to="/register" className="btn-primary text-sm py-1.5 px-4">Kayıt</Link>
-              </div>
-            )}
-          </div>
+              )}
+            </>
+          )}
 
-          {/* Mobile menu button */}
-          <button className="md:hidden p-2 text-stone-400" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          {user ? (
+            <div className="flex items-center gap-2">
+              <Link to="/profile" className="inline-flex items-center gap-2 rounded-full border border-gold/35 bg-bg-black/80 px-3 py-2 text-sm text-gold-bright">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full border border-gold/45 font-bold text-xs">
+                  {user.username?.[0]?.toUpperCase()}
+                </span>
+                <span className="max-w-[90px] truncate">{user.username}</span>
+              </Link>
+              <button onClick={handleLogout} className="rounded-lg border border-gold/20 p-2 text-gold/70 transition hover:border-ember hover:text-ember">
+                <LogOut size={16} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link to="/login" className="rounded-lg border border-gold/45 bg-bg-black/40 px-5 py-2 text-sm font-semibold text-gold-bright transition hover:border-gold">
+                {t('nav.login')}
+              </Link>
+              <Link to="/register" className="rounded-lg bg-ember px-5 py-2 text-sm font-semibold text-gold-bright shadow-[0_0_20px_hsl(var(--ember-red)_/_0.4)] transition hover:shadow-[0_0_28px_hsl(var(--ember-red)_/_0.55)]">
+                {t('nav.register')}
+              </Link>
+            </>
+          )}
+
+          <button onClick={toggleLanguage} className="inline-flex items-center gap-2 rounded-full border border-gold/35 bg-bg-black/60 px-3 py-2 text-sm font-bold text-gold-bright">
+            {nextLanguageLabel}
           </button>
         </div>
+
+        <button className="md:hidden rounded-lg border border-gold/25 p-2 text-gold-bright" onClick={() => setMenuOpen(!menuOpen)}>
+          {menuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
 
-      {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-stone-800 bg-stone-950 px-4 py-3 space-y-1">
-          <Link to="/map" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-stone-300 hover:bg-stone-800"><Map size={16} /> Harita</Link>
-          {user && <Link to="/add-place" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-stone-300 hover:bg-stone-800"><Plus size={16} /> Yer Ekle</Link>}
-          {user?.role === 'admin' && <Link to="/admin" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-stone-300 hover:bg-stone-800"><Shield size={16} /> Admin</Link>}
+        <div className="md:hidden border-t border-gold/15 bg-bg-black px-4 py-3">
+          <Link to="/map" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10">
+            <MapGlyph className="h-4 w-4" /> {t('nav.map')}
+          </Link>
+          {user && <Link to="/add-place" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10"><Plus size={16} /> {t('nav.addPlace')}</Link>}
+          {user?.role === 'admin' && <Link to="/admin" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10"><Shield size={16} /> {t('common.admin')}</Link>}
           {user ? (
             <>
-              <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-stone-300 hover:bg-stone-800"><User size={16} /> Profil</Link>
-              <button onClick={() => { handleLogout(); setMenuOpen(false) }} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-red-400 hover:bg-stone-800 w-full"><LogOut size={16} /> Çıkış</button>
+              <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-gold-bright hover:bg-gold/10"><User size={16} /> {t('nav.profile')}</Link>
+              <button onClick={() => { handleLogout(); setMenuOpen(false) }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-ember hover:bg-gold/10"><LogOut size={16} /> {t('nav.logout')}</button>
             </>
           ) : (
-            <div className="flex gap-2 pt-1">
-              <Link to="/login" onClick={() => setMenuOpen(false)} className="btn-secondary flex-1 text-center text-sm">Giriş</Link>
-              <Link to="/register" onClick={() => setMenuOpen(false)} className="btn-primary flex-1 text-center text-sm">Kayıt</Link>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Link to="/login" onClick={() => setMenuOpen(false)} className="btn-secondary text-center text-sm">{t('nav.login')}</Link>
+              <Link to="/register" onClick={() => setMenuOpen(false)} className="btn-primary text-center text-sm">{t('nav.register')}</Link>
             </div>
           )}
+          <button onClick={toggleLanguage} className="mt-2 flex w-full items-center justify-center rounded-lg border border-gold/35 bg-bg-black/60 px-3 py-2 text-sm font-bold text-gold-bright">
+            {nextLanguageLabel}
+          </button>
         </div>
       )}
     </nav>

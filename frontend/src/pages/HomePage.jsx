@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom'
 import { citiesAPI, placesAPI } from '../services/api'
 import { MapPin, Landmark, Zap, ArrowRight, Star, Clock } from 'lucide-react'
 import { has360Imagery } from '../utils/place360'
+import { useLanguage } from '../i18n/LanguageContext'
 
 const categoryEmoji = { historical: '🏛️', museum: '🏺', mosque: '🕌', castle: '🏰', ruins: '⛏️', monument: '🗿', cultural: '🎭', other: '📍' }
-const categoryLabel = { historical: 'Tarihi', museum: 'Müze', mosque: 'Cami', castle: 'Kale', ruins: 'Harabe', monument: 'Anıt', cultural: 'Kültürel', other: 'Diğer' }
-
 export default function HomePage() {
+  const { t, translateCity, translatePlace } = useLanguage()
   const [cities, setCities] = useState([])
   const [featuredPlaces, setFeaturedPlaces] = useState([])
   const [loading, setLoading] = useState(true)
@@ -31,22 +31,22 @@ export default function HomePage() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm mb-8">
               <span className="live-dot w-2 h-2 bg-amber-400 rounded-full" />
-              Canlı etkinlik takibi aktif
+              {t('home.liveTracking')}
             </div>
             <h1 className="font-display text-5xl md:text-7xl font-bold text-stone-100 leading-tight mb-6">
-              Türkiye'nin<br />
-              <span className="text-amber-400">Tarihi Ruhunu</span><br />
-              Keşfet
+              {t('home.titlePrefix')}<br />
+              <span className="text-amber-400">{t('home.titleHighlight')}</span><br />
+              {t('home.titleSuffix')}
             </h1>
             <p className="text-stone-400 text-lg md:text-xl leading-relaxed mb-10 max-w-xl">
-              Binlerce yıllık tarihi mekanlar, anlık kültürel etkinlikler ve sokak sanatı — hepsi tek haritada.
+              {t('home.subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Link to="/map" className="btn-primary flex items-center justify-center gap-2 text-base py-3 px-8">
-                <MapPin size={18} /> Haritayı Aç
+                <MapPin size={18} /> {t('common.openMap')}
               </Link>
               <Link to="/register" className="btn-secondary flex items-center justify-center gap-2 text-base py-3 px-8">
-                Ücretsiz Kayıt <ArrowRight size={16} />
+                {t('home.freeRegister')} <ArrowRight size={16} />
               </Link>
             </div>
           </div>
@@ -58,9 +58,9 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-3 gap-8">
             {[
-              { label: 'Şehir', value: '81+', icon: MapPin },
-              { label: 'Tarihi Mekan', value: '500+', icon: Landmark },
-              { label: 'Canlı Etkinlik', value: '∞', icon: Zap },
+              { label: t('home.statsCity'), value: '81+', icon: MapPin },
+              { label: t('home.statsPlace'), value: '500+', icon: Landmark },
+              { label: t('home.statsLive'), value: '∞', icon: Zap },
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="text-center">
                 <Icon size={20} className="text-amber-400 mx-auto mb-2" />
@@ -75,8 +75,8 @@ export default function HomePage() {
       {/* Cities */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="font-display text-3xl font-bold text-stone-100">Şehirler</h2>
-          <Link to="/map" className="text-amber-400 hover:text-amber-300 text-sm flex items-center gap-1">Haritada Gör <ArrowRight size={14} /></Link>
+          <h2 className="font-display text-3xl font-bold text-stone-100">{t('home.cities')}</h2>
+          <Link to="/map" className="text-amber-400 hover:text-amber-300 text-sm flex items-center gap-1">{t('home.viewOnMap')} <ArrowRight size={14} /></Link>
         </div>
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -84,15 +84,17 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {cities.map(city => (
+            {cities.map(city => {
+              const displayCity = translateCity(city)
+              return (
               <Link key={city._id} to={`/city/${city._id}`} className="card p-4 hover:border-amber-500/40 hover:bg-stone-800/50 transition-all group">
-                <div className="font-semibold text-stone-100 group-hover:text-amber-300 transition-colors">{city.name}</div>
-                <div className="text-stone-500 text-xs mt-1">{city.region}</div>
+                <div className="font-semibold text-stone-100 group-hover:text-amber-300 transition-colors">{displayCity.displayName}</div>
+                <div className="text-stone-500 text-xs mt-1">{displayCity.displayRegion}</div>
                 <div className="flex items-center gap-1 text-amber-500/70 text-xs mt-2">
-                  <Landmark size={11} /> {city.placeCount} mekan
+                  <Landmark size={11} /> {t('home.placeCount', { count: city.placeCount })}
                 </div>
               </Link>
-            ))}
+            )})}
           </div>
         )}
       </section>
@@ -100,8 +102,8 @@ export default function HomePage() {
       {/* Featured Places */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="font-display text-3xl font-bold text-stone-100">Öne Çıkan Mekanlar</h2>
-          <Link to="/map" className="text-amber-400 hover:text-amber-300 text-sm flex items-center gap-1">Tümünü Gör <ArrowRight size={14} /></Link>
+          <h2 className="font-display text-3xl font-bold text-stone-100">{t('home.featured')}</h2>
+          <Link to="/map" className="text-amber-400 hover:text-amber-300 text-sm flex items-center gap-1">{t('home.seeAll')} <ArrowRight size={14} /></Link>
         </div>
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -109,14 +111,16 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {featuredPlaces.map(place => (
+            {featuredPlaces.map(place => {
+              const displayPlace = translatePlace(place)
+              return (
               <Link key={place._id} to={`/place/${place._id}`} className="card group hover:border-amber-500/30 transition-all">
                 <div className="h-40 bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center text-5xl">
                   {categoryEmoji[place.category] || '📍'}
                 </div>
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <h3 className="font-semibold text-stone-100 group-hover:text-amber-300 transition-colors leading-tight">{place.name}</h3>
+                    <h3 className="font-semibold text-stone-100 group-hover:text-amber-300 transition-colors leading-tight">{displayPlace.displayName}</h3>
                     {place.rating > 0 && (
                       <div className="flex items-center gap-1 text-amber-400 text-sm shrink-0">
                         <Star size={12} fill="currentColor" /> {place.rating}
@@ -124,20 +128,20 @@ export default function HomePage() {
                     )}
                   </div>
                   <div className="flex items-center gap-1 text-stone-500 text-xs mb-2">
-                    <MapPin size={11} /> {place.city}
+                    <MapPin size={11} /> {displayPlace.displayCity}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="badge bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                      {categoryLabel[place.category]}
+                      {displayPlace.displayCategory || t(`categories.${place.category}`)}
                     </span>
-                    {place.period && <span className="text-stone-600 text-xs">{place.period}</span>}
+                    {place.period && <span className="text-stone-600 text-xs">{displayPlace.displayPeriod}</span>}
                   </div>
                   <div className={`mt-3 text-xs ${has360Imagery(place) ? 'text-amber-400' : 'text-stone-600'}`}>
-                    {has360Imagery(place) ? '360 View' : '360 view not available yet'}
+                    {has360Imagery(place) ? '360 View' : t('place.viewUnavailable')}
                   </div>
                 </div>
               </Link>
-            ))}
+            )})}
           </div>
         )}
       </section>

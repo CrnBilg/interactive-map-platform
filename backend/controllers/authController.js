@@ -7,12 +7,19 @@ const generateToken = (id) =>
 // @POST /api/auth/register
 const register = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const username = req.body.username?.trim();
+    const email = req.body.email?.trim().toLowerCase();
+    const password = req.body.password;
     if (!username || !email || !password)
       return res.status(400).json({ message: 'All fields required' });
+    if (username.length < 3)
+      return res.status(400).json({ message: 'Username must be at least 3 characters' });
+    if (password.length < 6)
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
 
     const exists = await User.findOne({ $or: [{ email }, { username }] });
-    if (exists) return res.status(400).json({ message: 'User already exists' });
+    if (exists?.email === email) return res.status(400).json({ message: 'Email already registered' });
+    if (exists?.username === username) return res.status(400).json({ message: 'Username already taken' });
 
     const user = await User.create({ username, email, password });
     res.status(201).json({
@@ -30,7 +37,11 @@ const register = async (req, res) => {
 // @POST /api/auth/login
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = req.body.email?.trim().toLowerCase();
+    const password = req.body.password;
+    if (!email || !password)
+      return res.status(400).json({ message: 'Email and password required' });
+
     const user = await User.findOne({ email });
     if (!user || !(await user.matchPassword(password)))
       return res.status(401).json({ message: 'Invalid credentials' });

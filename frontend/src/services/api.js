@@ -2,6 +2,16 @@ import axios from 'axios'
 
 const api = axios.create({ baseURL: '/api' })
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('citylore_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  } else {
+    delete config.headers.Authorization
+  }
+  return config
+})
+
 // Places
 export const placesAPI = {
   getAll: (params) => api.get('/places', { params }),
@@ -39,6 +49,11 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   updateProfile: (data) => api.put('/auth/profile', data),
   savePlace: (placeId) => api.post(`/auth/save-place/${placeId}`),
+}
+
+// Chat
+export const chatAPI = {
+  send: (messages) => api.post('/chat', { messages }),
 }
 
 export default api

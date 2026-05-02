@@ -38,8 +38,8 @@ const placeSchema = new mongoose.Schema(
       heading: { type: Number, default: 0 },
       pitch: { type: Number, default: 0 },
       fov: { type: Number, default: 80 },
-      radius: { type: Number, default: 50 },
-      maxDistance: { type: Number, default: 50 },
+      radius: { type: Number, default: 500 },
+      maxDistance: { type: Number, default: 500 },
     },
     period: { type: String }, // e.g. "Ottoman Era", "Byzantine"
     entryFee: { type: Number, default: 0 },
