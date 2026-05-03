@@ -1,9 +1,22 @@
 const Review = require('../models/Review');
 const Place = require('../models/Place');
 
+const canAccessPlace = (place, user) => {
+  if (!place) return false;
+  const addedById = place.addedBy?._id || place.addedBy;
+  const isOwner = addedById?.toString() === user?._id?.toString();
+  const isAdmin = user?.role === 'admin';
+  const isLegacyAdminPlace = place.addedBy?.role === 'admin' && !place.visibility;
+  const isPublic = place.visibility === 'public' || isLegacyAdminPlace || !place.addedBy;
+  return isPublic || isOwner || isAdmin;
+};
+
 // @GET /api/reviews/place/:placeId
 const getReviews = async (req, res) => {
   try {
+    const place = await Place.findById(req.params.placeId).populate('addedBy', 'role');
+    if (!canAccessPlace(place, req.user)) return res.status(404).json({ message: 'Place not found' });
+
     const reviews = await Review.find({ place: req.params.placeId })
       .populate('user', 'username avatar')
       .sort({ createdAt: -1 });
@@ -29,7 +42,7 @@ const createReview = async (req, res) => {
     }
 
     const place = await Place.findById(req.params.placeId);
-    if (!place) return res.status(404).json({ message: 'Place not found' });
+    if (!canAccessPlace(place, req.user)) return res.status(404).json({ message: 'Place not found' });
 
     const existing = await Review.findOne({ place: req.params.placeId, user: req.user._id });
     if (existing) return res.status(400).json({ message: 'You already reviewed this place' });

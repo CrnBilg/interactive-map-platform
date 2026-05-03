@@ -67,6 +67,7 @@ function FooterNavLink({ label, to }) {
 
 export default function Footer() {
   const { t } = useLanguage()
+  const year = new Date().getFullYear()
   const handleNewsletterSubmit = (event) => {
     event.preventDefault()
     toast.success(t('toast.newsletterJoined'))
@@ -121,7 +122,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <p className="relative z-[4] mt-9 text-center text-xs text-parchment/45">{t('landing.copyright')}</p>
+      <p className="relative z-[4] mt-9 text-center text-xs text-parchment/45">{t('landing.copyright', { year })}</p>
     </footer>
   )
 }

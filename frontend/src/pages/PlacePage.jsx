@@ -31,7 +31,9 @@ export default function PlacePage() {
       .then(([placeRes, reviewsRes]) => {
         setPlace(placeRes.data)
         setReviews(reviewsRes.data)
-        if (user) setSaved(user.savedPlaces?.includes(id))
+        if (user) {
+          setSaved(user.savedPlaces?.some(savedPlace => (savedPlace?._id || savedPlace) === id))
+        }
       })
       .finally(() => setLoading(false))
   }, [id, user])

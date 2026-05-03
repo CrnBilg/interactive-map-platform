@@ -417,11 +417,6 @@ const seedDB = async () => {
       return user;
     };
 
-    // Clear seed-owned data, but keep users registered through the app.
-    await City.deleteMany();
-    await Place.deleteMany();
-    await Review.deleteMany();
-
     // Create admin user
     const admin = await ensureUser({
       username: 'admin',
@@ -439,6 +434,17 @@ const seedDB = async () => {
     });
     console.log('✅ Test user created (email: test@citylore.com, password: test123)');
 
+    // Clear seed-owned data, but keep users and their private account places.
+    const seedPlaceIds = await Place.find({
+      $or: [
+        { addedBy: admin._id },
+        { visibility: 'public' },
+      ],
+    }).distinct('_id');
+    await Review.deleteMany({ place: { $in: seedPlaceIds } });
+    await Place.deleteMany({ _id: { $in: seedPlaceIds } });
+    await City.deleteMany();
+
     // Seed cities
     const createdCities = await City.insertMany(cities);
     console.log(`✅ ${createdCities.length} cities seeded`);
@@ -451,6 +457,7 @@ const seedDB = async () => {
       ...p,
       cityId: cityMap[p.city] || null,
       addedBy: admin._id,
+      visibility: 'public',
     }));
 
     const createdPlaces = await Place.insertMany(placesWithRefs);
@@ -461,6 +468,9 @@ const seedDB = async () => {
       const count = createdPlaces.filter((p) => p.city === city.name).length;
       await City.findByIdAndUpdate(city._id, { placeCount: count });
     }
+    await Promise.all(createdCities.map(city =>
+      Place.updateMany({ city: city.name }, { cityId: city._id })
+    ));
     console.log('✅ City place counts updated');
 
     console.log('\n🎉 Database seeded successfully!');
