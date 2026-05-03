@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './context/AuthContext'
@@ -6,27 +7,32 @@ import { RouteProvider } from './context/RouteContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { LanguageProvider } from './i18n/LanguageContext'
 import Navbar from './components/Navbar'
-import LandingPage from './pages/LandingPage'
-import HomePage from './pages/HomePage'
-import MapPage from './pages/MapPage'
-import PlacePage from './pages/PlacePage'
-import CityPage from './pages/CityPage'
-import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
-import ProfilePage from './pages/ProfilePage'
-import SavedPlacesPage from './pages/SavedPlacesPage'
-import AddPlacePage from './pages/AddPlacePage'
-import AdminPage from './pages/AdminPage'
-import Places from './pages/Places'
-import Events from './pages/Events'
-import RoutesPage from './pages/Routes'
-import About from './pages/About'
-import Contact from './pages/Contact'
-import Help from './pages/Help'
-import Terms from './pages/Terms'
-import Privacy from './pages/Privacy'
-import ChatbotWidget from './components/ChatbotWidget'
 import HashScroll from './components/HashScroll'
+
+const LandingPage = lazy(() => import('./pages/LandingPage'))
+const HomePage = lazy(() => import('./pages/HomePage'))
+const MapPage = lazy(() => import('./pages/MapPage'))
+const PlacePage = lazy(() => import('./pages/PlacePage'))
+const CityPage = lazy(() => import('./pages/CityPage'))
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const RegisterPage = lazy(() => import('./pages/RegisterPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const SavedPlacesPage = lazy(() => import('./pages/SavedPlacesPage'))
+const AddPlacePage = lazy(() => import('./pages/AddPlacePage'))
+const AdminPage = lazy(() => import('./pages/AdminPage'))
+const Places = lazy(() => import('./pages/Places'))
+const Events = lazy(() => import('./pages/Events'))
+const RoutesPage = lazy(() => import('./pages/Routes'))
+const About = lazy(() => import('./pages/About'))
+const Contact = lazy(() => import('./pages/Contact'))
+const Help = lazy(() => import('./pages/Help'))
+const Terms = lazy(() => import('./pages/Terms'))
+const Privacy = lazy(() => import('./pages/Privacy'))
+const ChatbotWidget = lazy(() => import('./components/ChatbotWidget'))
+
+function PageFallback() {
+  return <div className="min-h-[40vh]" />
+}
 
 export default function App() {
   return (
@@ -38,28 +44,30 @@ export default function App() {
               <div className="min-h-screen bg-bg-deepest text-parchment font-body transition-colors duration-300">
                 <HashScroll />
                 <Navbar />
-                <Routes>
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/explore" element={<HomePage />} />
-                  <Route path="/map" element={<MapPage />} />
-                  <Route path="/places" element={<Places />} />
-                  <Route path="/events" element={<Events />} />
-                  <Route path="/routes" element={<RoutesPage />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/help" element={<Help />} />
-                  <Route path="/terms" element={<Terms />} />
-                  <Route path="/privacy" element={<Privacy />} />
-                  <Route path="/place/:id" element={<PlacePage />} />
-                  <Route path="/city/:id" element={<CityPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/saved-places" element={<SavedPlacesPage />} />
-                  <Route path="/add-place" element={<AddPlacePage />} />
-                  <Route path="/admin" element={<AdminPage />} />
-                </Routes>
-                <ChatbotWidget />
+                <Suspense fallback={<PageFallback />}>
+                  <Routes>
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/explore" element={<HomePage />} />
+                    <Route path="/map" element={<MapPage />} />
+                    <Route path="/places" element={<Places />} />
+                    <Route path="/events" element={<Events />} />
+                    <Route path="/routes" element={<RoutesPage />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/help" element={<Help />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/place/:id" element={<PlacePage />} />
+                    <Route path="/city/:id" element={<CityPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/saved-places" element={<SavedPlacesPage />} />
+                    <Route path="/add-place" element={<AddPlacePage />} />
+                    <Route path="/admin" element={<AdminPage />} />
+                  </Routes>
+                  <ChatbotWidget />
+                </Suspense>
               </div>
               <Toaster
                 position="bottom-right"

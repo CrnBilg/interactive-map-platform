@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Bot, Loader2, MessageCircle, Send, X } from 'lucide-react'
 import { chatAPI } from '../services/api'
 import { useLanguage } from '../i18n/LanguageContext'
 
 export default function ChatbotWidget() {
   const { t, language } = useLanguage()
+  const location = useLocation()
+  const isMapPage = location.pathname.startsWith('/map')
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([{ role: 'assistant', content: t('chatbot.welcome'), systemWelcome: true }])
   const [input, setInput] = useState('')
@@ -54,7 +57,7 @@ export default function ChatbotWidget() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-[2500]">
+    <div className={`fixed right-4 z-[2500] ${isMapPage ? 'bottom-24' : 'bottom-4'}`}>
       {open && (
         <div className="mb-3 w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border border-stone-700 bg-stone-950 shadow-2xl">
           <div className="flex items-center justify-between border-b border-stone-800 bg-stone-900 px-4 py-3">

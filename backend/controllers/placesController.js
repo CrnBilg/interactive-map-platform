@@ -7,15 +7,29 @@ const optionalNumber = (value, fallback) => {
   return Number.isFinite(number) ? number : fallback;
 };
 
+const numberFromQuery = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
 // @GET /api/places
 const getPlaces = async (req, res) => {
   try {
-    const { city, category, search, page = 1, limit = 20, lat, lng, radius = 10000 } = req.query;
+    const { city, category, search, page = 1, limit = 20, lat, lng, radius = 10000, view, north, south, east, west } = req.query;
     const query = {};
+    const isMapView = view === 'map';
 
     if (city) query.city = { $regex: city, $options: 'i' };
     if (category) query.category = category;
     if (search) query.$text = { $search: search };
+
+    const bounds = {
+      north: numberFromQuery(north),
+      south: numberFromQuery(south),
+      east: numberFromQuery(east),
+      west: numberFromQuery(west),
+    };
+    const hasBounds = Object.values(bounds).every(value => value !== null);
 
     // Geo query
     if (lat && lng) {
@@ -25,16 +39,35 @@ const getPlaces = async (req, res) => {
           $maxDistance: parseInt(radius),
         },
       };
+    } else if (hasBounds && bounds.north > bounds.south && bounds.east > bounds.west) {
+      query.location = {
+        $geoWithin: {
+          $box: [
+            [bounds.west, bounds.south],
+            [bounds.east, bounds.north],
+          ],
+        },
+      };
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const places = await Place.find(query)
-      .populate('addedBy', 'username avatar')
+    const findQuery = Place.find(query)
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
 
-    const total = await Place.countDocuments(query);
+    if (isMapView) {
+      findQuery
+        .select('name description category city location address period entryFee openingHours rating reviewCount panoramaUrl panoramaxImageId streetViewUrl has360 panoramas panoramaItems streetView')
+        .lean();
+    } else {
+      findQuery.populate('addedBy', 'username avatar');
+    }
+
+    const [places, total] = await Promise.all([
+      findQuery,
+      Place.countDocuments(query),
+    ]);
 
     res.json({ places, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) });
   } catch (err) {

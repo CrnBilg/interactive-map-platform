@@ -66,5 +66,6 @@ placeSchema.pre('validate', function setHas360(next) {
 
 placeSchema.index({ location: '2dsphere' });
 placeSchema.index({ city: 'text', name: 'text', description: 'text' });
+placeSchema.index({ city: 1, category: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Place', placeSchema);

@@ -14,7 +14,7 @@ api.interceptors.request.use((config) => {
 
 // Places
 export const placesAPI = {
-  getAll: (params) => api.get('/places', { params }),
+  getAll: (params, config = {}) => api.get('/places', { ...config, params }),
   getOne: (id) => api.get(`/places/${id}`),
   create: (data) => api.post('/places', data),
   update: (id, data) => api.put(`/places/${id}`, data),
