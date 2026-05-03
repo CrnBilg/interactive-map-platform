@@ -95,6 +95,11 @@ export default function PlacePage() {
   const has360 = has360Imagery(place)
   const isInRoute = routePlaces.some(p => p._id === place._id)
   const heroImage = !imageFailed && Array.isArray(place.images) ? place.images.find(Boolean) : ''
+  const placeLat = place.lat ?? place.location?.coordinates?.[1]
+  const placeLng = place.lng ?? place.location?.coordinates?.[0]
+  const mapQuery = Number.isFinite(placeLat) && Number.isFinite(placeLng)
+    ? `/map?place=${encodeURIComponent(place._id || place.id)}&lat=${placeLat}&lng=${placeLng}&zoom=15`
+    : `/map?city=${encodeURIComponent(place.city)}`
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
@@ -182,7 +187,7 @@ export default function PlacePage() {
               <Globe size={14} /> {t('common.website')}
             </a>
           )}
-          <Link to={`/map?city=${place.city}`} className="card p-3 flex items-center gap-2 text-stone-400 hover:text-stone-200 transition-colors text-sm">
+          <Link to={mapQuery} className="card p-3 flex items-center gap-2 text-stone-400 hover:text-stone-200 transition-colors text-sm">
             <MapPin size={14} /> {t('place.showOnMap')}
           </Link>
         </div>
