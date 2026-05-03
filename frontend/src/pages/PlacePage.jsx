@@ -3,13 +3,11 @@ import { useParams, Link, useLocation, useNavigate } from 'react-router-dom'
 import { placesAPI, reviewsAPI, authAPI } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useRoute } from '../context/RouteContext'
-import { MapPin, Star, Clock, DollarSign, Globe, Bookmark, BookmarkCheck, Trash2, ArrowLeft, Eye, Navigation } from 'lucide-react'
+import { MapPin, Star, Clock, DollarSign, Globe, Bookmark, BookmarkCheck, Trash2, ArrowLeft, Eye, Navigation, Image as ImageIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PanoramaModal from '../components/PanoramaModal'
 import { has360Imagery } from '../utils/place360'
 import { useLanguage } from '../i18n/LanguageContext'
-
-const categoryEmoji = { historical: '🏛️', museum: '🏺', mosque: '🕌', castle: '🏰', ruins: '⛏️', monument: '🗿', cultural: '🎭', other: '📍' }
 
 export default function PlacePage() {
   const { id } = useParams()
@@ -23,6 +21,7 @@ export default function PlacePage() {
   const [loading, setLoading] = useState(true)
   const [saved, setSaved] = useState(false)
   const [panoramaOpen, setPanoramaOpen] = useState(false)
+  const [imageFailed, setImageFailed] = useState(false)
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' })
   const [submitting, setSubmitting] = useState(false)
 
@@ -37,6 +36,10 @@ export default function PlacePage() {
       })
       .finally(() => setLoading(false))
   }, [id, user])
+
+  useEffect(() => {
+    setImageFailed(false)
+  }, [id])
 
   const handleSave = async () => {
     if (!user) { toast.error(t('toast.saveLogin')); return }
@@ -91,6 +94,7 @@ export default function PlacePage() {
   const displayPlace = translatePlace(place)
   const has360 = has360Imagery(place)
   const isInRoute = routePlaces.some(p => p._id === place._id)
+  const heroImage = !imageFailed && Array.isArray(place.images) ? place.images.find(Boolean) : ''
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
@@ -100,10 +104,13 @@ export default function PlacePage() {
 
       {/* Hero image */}
       <div className="h-64 md:h-80 bg-gradient-to-br from-stone-800 to-stone-900 rounded-2xl flex items-center justify-center mb-6 relative overflow-hidden">
-        {place.images?.[0] ? (
-          <img src={place.images[0]} alt={displayPlace.displayName} className="w-full h-full object-cover" />
+        {heroImage ? (
+          <img src={heroImage} alt={displayPlace.displayName} className="w-full h-full object-cover" onError={() => setImageFailed(true)} />
         ) : (
-          <span className="text-8xl">{categoryEmoji[place.category]}</span>
+          <div className="flex flex-col items-center gap-3 text-stone-600">
+            <ImageIcon size={52} strokeWidth={1.4} />
+            <span className="text-sm">{t('place.imageUnavailable') || 'Image not available yet'}</span>
+          </div>
         )}
         <div className="absolute top-4 right-4 flex gap-2">
           <button

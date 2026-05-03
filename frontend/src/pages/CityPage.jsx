@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { citiesAPI, placesAPI } from '../services/api'
-import { MapPin, Landmark, Star, ArrowRight } from 'lucide-react'
+import { MapPin, Landmark, Star, ArrowRight, Image as ImageIcon } from 'lucide-react'
 import { has360Imagery } from '../utils/place360'
 import { useLanguage } from '../i18n/LanguageContext'
 
-const categoryEmoji = { historical: '🏛️', museum: '🏺', mosque: '🕌', castle: '🏰', ruins: '⛏️', monument: '🗿', cultural: '🎭', other: '📍' }
+const getPlaceImage = (place) => Array.isArray(place.images) ? place.images.find(Boolean) : ''
 
 export default function CityPage() {
   const { t, translateCity, translatePlace } = useLanguage()
@@ -45,10 +45,24 @@ export default function CityPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {places.map(place => {
           const displayPlace = translatePlace(place)
+          const placeImage = getPlaceImage(place)
           return (
           <Link key={place._id} to={`/place/${place._id}`} className="card group hover:border-amber-500/30 transition-all">
-            <div className="h-36 bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center text-5xl">
-              {categoryEmoji[place.category]}
+            <div className="h-36 bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center overflow-hidden">
+              {placeImage && (
+                <img
+                  src={placeImage}
+                  alt={displayPlace.displayName}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  onError={(e) => {
+                    e.currentTarget.classList.add('hidden')
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                  }}
+                />
+              )}
+              <div className={`${placeImage ? 'hidden ' : ''}flex flex-col items-center gap-2 text-stone-600`}>
+                <ImageIcon size={32} strokeWidth={1.4} />
+              </div>
             </div>
             <div className="p-4">
               <h3 className="font-semibold text-stone-100 group-hover:text-amber-300 transition-colors">{displayPlace.displayName}</h3>

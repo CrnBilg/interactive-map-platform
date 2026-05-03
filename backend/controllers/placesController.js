@@ -1,6 +1,7 @@
 const Place = require('../models/Place');
 const City = require('../models/City');
 const User = require('../models/User');
+const { resolvePlaceImage } = require('../utils/placeImages');
 
 const optionalNumber = (value, fallback) => {
   if (value === undefined || value === null || value === '') return fallback;
@@ -11,6 +12,19 @@ const optionalNumber = (value, fallback) => {
 const numberFromQuery = (value) => {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+};
+
+const attachResolvedImage = async (place) => {
+  if (!place || !Array.isArray(place.images) || place.images.some(Boolean)) return place;
+
+  const imageUrl = await resolvePlaceImage(place);
+  if (!imageUrl) return place;
+
+  place.images = [imageUrl];
+  if (typeof place.save === 'function') {
+    await place.save();
+  }
+  return place;
 };
 
 // @GET /api/places
@@ -85,6 +99,10 @@ const getPlaces = async (req, res) => {
       Place.countDocuments(query),
     ]);
 
+    if (!isMapView && places.length <= 12) {
+      await Promise.all(places.map(attachResolvedImage));
+    }
+
     res.json({ places, total, page: parseInt(page), pages: Math.ceil(total / parseInt(limit)) });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -101,6 +119,7 @@ const getPlace = async (req, res) => {
     const isLegacyAdminPlace = place.addedBy?.role === 'admin' && !place.visibility;
     const isPublic = place.visibility === 'public' || isLegacyAdminPlace || !place.addedBy;
     if (!isPublic && !isOwner && !isAdmin) return res.status(404).json({ message: 'Place not found' });
+    await attachResolvedImage(place);
     res.json(place);
   } catch (err) {
     res.status(500).json({ message: err.message });
