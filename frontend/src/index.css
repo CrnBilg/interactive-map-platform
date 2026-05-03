@@ -344,6 +344,31 @@
   18%, 72% { opacity: 1; transform: translate(-50%, 0) scale(1); }
   100% { opacity: 0; transform: translate(-50%, -6px) scale(0.98); }
 }
+@keyframes discovery-card-unlock {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+    box-shadow: 0 0 0 hsl(var(--gold-bright) / 0);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.02);
+    box-shadow: 0 0 36px hsl(var(--gold-bright) / 0.38);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes discovery-card-pulse {
+  0%, 100% { box-shadow: 0 0 18px hsl(var(--gold-bright) / 0.16), 0 18px 42px hsl(var(--shadow-black) / 0.62); }
+  50% { box-shadow: 0 0 32px hsl(var(--gold-bright) / 0.28), 0 18px 42px hsl(var(--shadow-black) / 0.68); }
+}
+@keyframes discovery-progress-shine {
+  0% { filter: brightness(0.92); background-position: 0% 50%; }
+  50% { filter: brightness(1.18); background-position: 100% 50%; }
+  100% { filter: brightness(0.92); background-position: 0% 50%; }
+}
 @keyframes route-guide-float {
   0%, 100% { transform: translate3d(0, 0, 0) rotate(-6deg); }
   50% { transform: translate3d(8px, 5px, 0) rotate(7deg); }
@@ -360,6 +385,16 @@
 .profile-gold-glow { animation: profile-gold-glow 8s ease-in-out infinite; }
 .discovery-confetti { animation: discovery-confetti 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .discovery-reward { animation: discovery-reward 1.5s ease-out forwards; }
+.discovery-card-unlock {
+  animation:
+    discovery-card-unlock 620ms cubic-bezier(0.16, 1, 0.3, 1) both,
+    discovery-card-pulse 3.8s ease-in-out 700ms infinite;
+}
+.discovery-progress-fill {
+  background-size: 180% 100%;
+  transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: discovery-progress-shine 2.8s ease-in-out infinite;
+}
 .route-guide-float { animation: route-guide-float 4.2s ease-in-out infinite; }
 .turkey-city-halo {
   animation: turkey-city-halo 2s ease-in-out infinite;
@@ -388,6 +423,8 @@
   .profile-gold-glow,
   .discovery-confetti,
   .discovery-reward,
+  .discovery-card-unlock,
+  .discovery-progress-fill,
   .route-guide-float {
     animation: none !important;
   }

@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { authAPI, placesAPI } from '../services/api'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Bookmark, Compass, LogOut, MapPin, Plus, Puzzle, Route, Settings, Trophy, User, Zap } from 'lucide-react'
+import { ArrowRight, Bookmark, Compass, LogOut, MapPin, Plus, Puzzle, Route, Settings, Target, Trophy, User, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useLanguage } from '../i18n/LanguageContext'
-import DiscoveryPuzzle from '../components/DiscoveryPuzzle'
+import DiscoveryPuzzle, { DISCOVERIES_PER_LEVEL, getDiscoveryLevelTitleKey, getDiscoveryProgress } from '../components/DiscoveryPuzzle'
 
 export default function ProfilePage() {
   const { user, logout } = useAuth()
@@ -50,15 +50,24 @@ export default function ProfilePage() {
   const savedPlaces = profile.savedPlaces || []
   const savedCount = savedPlaces.length
   const myPlacesCount = myPlaces.length
-  const puzzleCount = Math.min(20, savedCount)
-  const discoveryProgress = Math.min(100, (savedCount / 20) * 100)
-  const progressPercent = Math.round(discoveryProgress)
-  const nextUnlock = Math.min(20, puzzleCount + 1)
+  const {
+    completedLevels,
+    currentLevel,
+    progressForDisplay,
+    progressPercent,
+    remaining,
+  } = getDiscoveryProgress(savedCount)
+  const levelTitle = t(getDiscoveryLevelTitleKey(currentLevel))
+  const dailyMissionTarget = 2
+  const dailyMissionProgress = savedCount > 0 ? savedCount % (dailyMissionTarget + 1) : 0
+  const dailyMissionDisplayProgress = Math.min(dailyMissionProgress, dailyMissionTarget)
+  const dailyMissionCompleted = dailyMissionDisplayProgress >= dailyMissionTarget
+  const dailyMissionPercent = Math.min((dailyMissionDisplayProgress / dailyMissionTarget) * 100, 100)
   const initial = profile.username?.[0]?.toUpperCase() || 'C'
   const profileStats = [
     { label: t('profile.cardDiscoveries'), value: savedCount, icon: MapPin },
     { label: t('profile.cardCities'), value: savedCount, icon: Compass },
-    { label: t('profile.cardComplete'), value: `${progressPercent}%`, icon: Puzzle },
+    { label: t('profile.cardComplete'), value: `${Math.round(progressPercent)}%`, icon: Puzzle },
   ]
   const statCards = [
     { label: t('profile.statsSaved'), value: savedCount, hint: t('profile.statsSavedHint'), icon: Bookmark },
@@ -95,8 +104,14 @@ export default function ProfilePage() {
               </div>
               <h2 className="font-display text-2xl font-bold text-stone-100">{profile.username}</h2>
               <div className="mt-2 rounded-full border border-gold/25 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold-bright">
-                {t('profile.explorerBadge')}
+                {t('profile.levelBadge', { level: currentLevel, title: levelTitle })}
               </div>
+              {completedLevels > 0 && (
+                <div className="mx-auto mt-2 inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-bg-black/70 px-3 py-1 text-[11px] font-bold text-gold-bright shadow-[0_0_18px_hsl(var(--gold-bright)/0.14)]">
+                  <Trophy size={13} />
+                  {t('profile.discoveryPuzzleNewBadge')}
+                </div>
+              )}
               <p className="mt-1 text-sm text-stone-500">{profile.email}</p>
               <p className="mt-3 text-sm font-medium text-stone-300">
                 {t('profile.completedDiscoveries', { count: savedCount })}
@@ -120,17 +135,57 @@ export default function ProfilePage() {
 
                 <div className="text-left">
                   <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold text-gold/75">
-                    <span>{t('profile.discoveryProgress')}</span>
-                    <span>{puzzleCount}/20</span>
+                    <span>{t('profile.levelProgressTitle', { level: currentLevel })}</span>
+                    <span>{t('profile.levelProgressCount', { count: progressForDisplay, total: DISCOVERIES_PER_LEVEL })}</span>
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg-black">
-                    <div className="h-full rounded-full bg-gradient-to-r from-gold-deep via-gold-bright to-gold-soft shadow-[0_0_16px_hsl(var(--gold-bright)/0.45)] transition-all duration-700" style={{ width: `${discoveryProgress}%` }} />
+                    <div className="discovery-progress-fill h-full rounded-full bg-gradient-to-r from-gold-deep via-gold-bright to-gold-soft shadow-[0_0_16px_hsl(var(--gold-bright)/0.45)]" style={{ width: `${progressPercent}%` }} />
                   </div>
+                  <p className="mt-2 text-xs font-semibold text-stone-500">
+                    {progressForDisplay === DISCOVERIES_PER_LEVEL
+                      ? t('profile.collectionCompleted')
+                      : t('profile.nextLevelRemaining', { count: remaining })}
+                  </p>
                 </div>
 
                 <div className="rounded-lg border border-gold/20 bg-gold/10 p-3 text-left shadow-[0_0_18px_hsl(var(--gold-bright)/0.08)]">
                   <p className="text-xs font-semibold text-gold-bright">{t('profile.nextUnlockLabel')}</p>
-                  <p className="mt-1 text-sm text-stone-300">{t('profile.nextUnlockText', { count: nextUnlock })}</p>
+                  <p className="mt-1 text-sm text-stone-300">
+                    {progressForDisplay === DISCOVERIES_PER_LEVEL
+                      ? t('profile.discoveryPuzzleNextCollectionCta')
+                      : t('profile.nextLevelRemaining', { count: remaining })}
+                  </p>
+                </div>
+
+                <div className={`group relative overflow-hidden rounded-xl border p-4 text-left transition duration-300 hover:-translate-y-0.5 ${dailyMissionCompleted ? 'border-gold-bright/50 bg-gold/10 shadow-gold-bloom' : 'border-gold/25 bg-bg-black/60 shadow-[0_0_22px_hsl(var(--gold-bright)/0.12)] hover:border-gold/45'}`}>
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_10%,hsl(var(--gold-bright)/0.18),transparent_34%),linear-gradient(135deg,hsl(var(--gold)/0.08),transparent_45%)]" />
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold/75">{t('profile.dailyMissionTitle')}</p>
+                        <h3 className="mt-2 font-display text-xl font-semibold text-stone-100">
+                          {dailyMissionCompleted ? t('profile.dailyMissionComplete') : t('profile.dailyMissionTarget')}
+                        </h3>
+                      </div>
+                      <div className="rounded-lg border border-gold/30 bg-bg-black/70 p-2 text-gold-bright">
+                        <Target size={18} />
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between text-xs font-semibold text-gold/75">
+                      <span>{dailyMissionDisplayProgress}/{dailyMissionTarget}</span>
+                      <span>{t('profile.dailyMissionReward')}</span>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-bg-black">
+                      <div className="discovery-progress-fill h-full rounded-full bg-gradient-to-r from-gold-deep via-gold-bright to-gold-soft" style={{ width: `${dailyMissionPercent}%` }} />
+                    </div>
+                    <p className="mt-3 text-xs leading-5 text-stone-400">
+                      {dailyMissionCompleted ? t('profile.dailyMissionRewardGained') : t('profile.dailyMissionHint')}
+                    </p>
+                    <Link to="/map?tab=places" className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-b from-gold-bright to-gold-deep px-3 py-2.5 text-xs font-bold text-bg-deep transition duration-300 hover:scale-[1.02]">
+                      <MapPin size={14} />
+                      {t('profile.dailyMissionCta')}
+                    </Link>
+                  </div>
                 </div>
 
                 <div className="rounded-lg border border-gold/15 bg-bg-black/50 p-3 text-left">
