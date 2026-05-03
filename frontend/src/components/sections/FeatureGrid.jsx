@@ -102,7 +102,7 @@ export default function FeatureGrid() {
   const translatedFeatures = t('landing.features')
 
   return (
-    <section className="lux-section px-5 py-10 sm:px-8 lg:px-14">
+    <section id="map" className="lux-section px-5 py-10 sm:px-8 lg:px-14">
       <div className="ornamental-divider relative z-[4] mb-7"><span /></div>
       <div className="relative z-[4] mx-auto grid max-w-[1500px] gap-5 xl:grid-cols-[5fr_1.55fr_1.55fr_1.55fr]">
         <article className="lux-card min-h-[400px] p-5 xl:col-span-1">
