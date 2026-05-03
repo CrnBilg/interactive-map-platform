@@ -1,4 +1,5 @@
 const Place = require('../models/Place');
+const User = require('../models/User');
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
@@ -50,6 +51,15 @@ const extractSearchWords = text =>
     .slice(-8);
 
 const findRelevantPlaces = async (question) => {
+  const adminIds = await User.find({ role: 'admin' }).distinct('_id');
+  const publicQuery = {
+    approved: true,
+    $or: [
+      { visibility: 'public' },
+      { addedBy: { $in: adminIds }, visibility: { $exists: false } },
+      { addedBy: { $exists: false } },
+    ],
+  };
   const words = extractSearchWords(question);
   const searchClauses = words.map(word => {
     const pattern = turkishLoosePattern(word);
@@ -64,13 +74,13 @@ const findRelevantPlaces = async (question) => {
   });
 
   const matchedPlaces = searchClauses.length
-    ? await Place.find({ approved: true, $or: searchClauses })
+    ? await Place.find({ $and: [publicQuery, { $or: searchClauses }] })
       .select('name city category description period entryFee openingHours address has360 location')
       .limit(12)
       .lean()
     : [];
 
-  const popularPlaces = await Place.find({ approved: true, _id: { $nin: matchedPlaces.map(place => place._id) } })
+  const popularPlaces = await Place.find({ ...publicQuery, _id: { $nin: matchedPlaces.map(place => place._id) } })
     .select('name city category description period entryFee openingHours address has360 location')
     .sort({ rating: -1, reviewCount: -1, createdAt: -1 })
     .limit(20)

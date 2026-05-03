@@ -48,6 +48,7 @@ const placeSchema = new mongoose.Schema(
     rating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
     addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    visibility: { type: String, enum: ['public', 'private'], default: 'private' },
     approved: { type: Boolean, default: true },
   },
   { timestamps: true }
@@ -67,5 +68,6 @@ placeSchema.pre('validate', function setHas360(next) {
 placeSchema.index({ location: '2dsphere' });
 placeSchema.index({ city: 'text', name: 'text', description: 'text' });
 placeSchema.index({ city: 1, category: 1, createdAt: -1 });
+placeSchema.index({ addedBy: 1, visibility: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Place', placeSchema);

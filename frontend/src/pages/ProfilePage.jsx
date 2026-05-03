@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { authAPI } from '../services/api'
+import { authAPI, placesAPI } from '../services/api'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, Bookmark, Compass, LogOut, MapPin, Plus, Puzzle, Route, Settings, Trophy, User, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -9,18 +9,23 @@ import DiscoveryPuzzle from '../components/DiscoveryPuzzle'
 
 export default function ProfilePage() {
   const { user, logout } = useAuth()
-  const { t } = useLanguage()
+  const { t, translatePlace } = useLanguage()
   const navigate = useNavigate()
   const [profile, setProfile] = useState(null)
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ username: '', bio: '' })
+  const [myPlaces, setMyPlaces] = useState([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!user) { navigate('/login'); return }
-    authAPI.getMe().then(res => {
-      setProfile(res.data)
-      setForm({ username: res.data.username, bio: res.data.bio || '' })
+    Promise.all([
+      authAPI.getMe(),
+      placesAPI.getAll({ mine: true, limit: 100 }),
+    ]).then(([profileRes, placesRes]) => {
+      setProfile(profileRes.data)
+      setForm({ username: profileRes.data.username, bio: profileRes.data.bio || '' })
+      setMyPlaces(placesRes.data.places || [])
     })
   }, [user])
 
@@ -44,6 +49,7 @@ export default function ProfilePage() {
 
   const savedPlaces = profile.savedPlaces || []
   const savedCount = savedPlaces.length
+  const myPlacesCount = myPlaces.length
   const puzzleCount = Math.min(20, savedCount)
   const discoveryProgress = Math.min(100, (savedCount / 20) * 100)
   const progressPercent = Math.round(discoveryProgress)
@@ -58,6 +64,7 @@ export default function ProfilePage() {
     { label: t('profile.statsSaved'), value: savedCount, hint: t('profile.statsSavedHint'), icon: Bookmark },
     { label: t('profile.statsCities'), value: 81, hint: t('profile.statsCitiesHint'), icon: MapPin },
     { label: t('profile.statsRoutes'), value: savedCount, hint: t('profile.statsRoutesHint'), icon: Route },
+    { label: t('profile.statsAdded'), value: myPlacesCount, hint: t('profile.statsAddedHint'), icon: Plus },
   ]
   const actionCards = [
     { label: t('profile.openMap'), text: t('profile.openMapText'), to: '/map', icon: Compass },
@@ -186,15 +193,15 @@ export default function ProfilePage() {
           </aside>
 
           <main className="space-y-6">
-            <section className="grid gap-4 sm:grid-cols-3">
+            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {statCards.map(({ label, value, hint, icon: Icon }, index) => (
-                <article key={label} className="profile-fade-up group rounded-lg border border-gold/25 bg-panel/85 p-5 shadow-card-lux transition duration-300 hover:-translate-y-1 hover:border-gold/55 hover:shadow-gold-bloom" style={{ animationDelay: `${140 + index * 70}ms` }}>
+                <article key={label} className="profile-fade-up rounded-lg border border-gold/25 bg-panel/85 p-5 shadow-card-lux" style={{ animationDelay: `${140 + index * 70}ms` }}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold/65">{label}</p>
                       <p className="profile-count-in mt-3 font-display text-4xl font-bold text-gold-bright" style={{ animationDelay: `${260 + index * 90}ms` }}>{value}</p>
                     </div>
-                    <div className="rounded-lg border border-gold/25 bg-gold/10 p-2 text-gold-bright transition duration-300 group-hover:scale-110">
+                    <div className="rounded-lg border border-gold/25 bg-gold/10 p-2 text-gold-bright">
                       <Icon size={20} />
                     </div>
                   </div>
@@ -217,6 +224,54 @@ export default function ProfilePage() {
                   </span>
                 </Link>
               ))}
+            </section>
+
+            <section className="profile-fade-up rounded-lg border border-gold/25 bg-panel/85 p-5 shadow-card-lux">
+              <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="section-label mb-2">{t('profile.myAddedEyebrow')}</p>
+                  <h3 className="font-display text-2xl font-semibold text-stone-100">{t('profile.myAddedPlaces')}</h3>
+                  <p className="mt-2 text-sm leading-6 text-stone-500">{t('profile.myAddedText')}</p>
+                </div>
+                <Link to="/add-place" className="btn-secondary inline-flex items-center gap-2 text-sm">
+                  <Plus size={14} />
+                  {t('profile.addPlace')}
+                </Link>
+              </div>
+
+              {myPlaces.length === 0 ? (
+                <div className="rounded-lg border border-gold/15 bg-bg-black/55 p-5 text-sm text-stone-500">
+                  {t('profile.noAddedPlaces')}
+                </div>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {myPlaces.map((place) => {
+                    const displayPlace = translatePlace(place)
+
+                    return (
+                      <Link
+                        key={place._id}
+                        to={`/place/${place._id}`}
+                        className="group rounded-lg border border-gold/15 bg-bg-black/55 p-4 transition duration-300 hover:-translate-y-0.5 hover:border-gold/45 hover:bg-bg-black/80"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <h4 className="truncate text-sm font-semibold text-stone-100 group-hover:text-gold-bright">{displayPlace.displayName}</h4>
+                            <p className="mt-1 flex items-center gap-1 text-xs text-stone-500">
+                              <MapPin size={11} />
+                              {displayPlace.displayCity || t('profile.unknownCity')}
+                            </p>
+                          </div>
+                          <span className="shrink-0 rounded-full border border-gold/25 bg-gold/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold-bright">
+                            {place.visibility === 'public' ? t('profile.publicPlace') : t('profile.privatePlace')}
+                          </span>
+                        </div>
+                        <p className="mt-3 line-clamp-2 text-xs leading-5 text-stone-500">{displayPlace.displayDescription}</p>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
             </section>
 
             {editing && (

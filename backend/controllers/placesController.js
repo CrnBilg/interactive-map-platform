@@ -1,5 +1,6 @@
 const Place = require('../models/Place');
 const City = require('../models/City');
+const User = require('../models/User');
 
 const optionalNumber = (value, fallback) => {
   if (value === undefined || value === null || value === '') return fallback;
@@ -15,9 +16,24 @@ const numberFromQuery = (value) => {
 // @GET /api/places
 const getPlaces = async (req, res) => {
   try {
-    const { city, category, search, page = 1, limit = 20, lat, lng, radius = 10000, view, north, south, east, west } = req.query;
+    const { city, category, search, page = 1, limit = 20, lat, lng, radius = 10000, view, north, south, east, west, mine } = req.query;
     const query = {};
     const isMapView = view === 'map';
+    const userId = req.user?._id;
+    const isAdmin = req.user?.role === 'admin';
+
+    if (mine === 'true' || mine === '1') {
+      if (!userId) return res.status(401).json({ message: 'Not authorized' });
+      query.addedBy = userId;
+    } else if (!isAdmin) {
+      const adminIds = await User.find({ role: 'admin' }).distinct('_id');
+      query.$or = [
+        { visibility: 'public', approved: true },
+        { addedBy: { $in: adminIds }, visibility: { $exists: false }, approved: true },
+        ...(userId ? [{ addedBy: userId }] : []),
+        { addedBy: { $exists: false }, approved: true },
+      ];
+    }
 
     if (city) query.city = { $regex: city, $options: 'i' };
     if (category) query.category = category;
@@ -78,8 +94,13 @@ const getPlaces = async (req, res) => {
 // @GET /api/places/:id
 const getPlace = async (req, res) => {
   try {
-    const place = await Place.findById(req.params.id).populate('addedBy', 'username avatar');
+    const place = await Place.findById(req.params.id).populate('addedBy', 'username avatar role');
     if (!place) return res.status(404).json({ message: 'Place not found' });
+    const isOwner = place.addedBy?._id?.toString() === req.user?._id?.toString();
+    const isAdmin = req.user?.role === 'admin';
+    const isLegacyAdminPlace = place.addedBy?.role === 'admin' && !place.visibility;
+    const isPublic = place.visibility === 'public' || isLegacyAdminPlace || !place.addedBy;
+    if (!isPublic && !isOwner && !isAdmin) return res.status(404).json({ message: 'Place not found' });
     res.json(place);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -108,7 +129,11 @@ const createPlace = async (req, res) => {
       panoramas,
       panoramaItems,
       streetView,
+      visibility,
     } = req.body;
+    const placeVisibility = req.user.role === 'admin'
+      ? (visibility === 'private' ? 'private' : 'public')
+      : 'private';
 
     const place = await Place.create({
       name,
@@ -136,10 +161,12 @@ const createPlace = async (req, res) => {
         maxDistance: optionalNumber(streetView?.maxDistance, 500),
       },
       addedBy: req.user._id,
+      visibility: placeVisibility,
     });
 
-    // Update city place count
-    await City.findOneAndUpdate({ name: { $regex: city, $options: 'i' } }, { $inc: { placeCount: 1 } });
+    if (placeVisibility === 'public') {
+      await City.findOneAndUpdate({ name: { $regex: city, $options: 'i' } }, { $inc: { placeCount: 1 } });
+    }
 
     res.status(201).json(place);
   } catch (err) {
@@ -153,12 +180,15 @@ const updatePlace = async (req, res) => {
     const place = await Place.findById(req.params.id);
     if (!place) return res.status(404).json({ message: 'Place not found' });
 
-    const isOwner = place.addedBy.toString() === req.user._id.toString();
+    const isOwner = place.addedBy?.toString() === req.user._id.toString();
     const isAdmin = req.user.role === 'admin';
     if (!isOwner && !isAdmin) return res.status(403).json({ message: 'Not authorized' });
 
-    const { lat, lng, ...rest } = req.body;
+    const { lat, lng, visibility, ...rest } = req.body;
     Object.assign(place, rest);
+    if (req.user.role === 'admin' && ['public', 'private'].includes(visibility)) {
+      place.visibility = visibility;
+    }
     if (lat && lng) place.location = { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] };
 
     const updated = await place.save();
@@ -174,10 +204,13 @@ const deletePlace = async (req, res) => {
     const place = await Place.findById(req.params.id);
     if (!place) return res.status(404).json({ message: 'Place not found' });
 
-    const isOwner = place.addedBy.toString() === req.user._id.toString();
+    const isOwner = place.addedBy?.toString() === req.user._id.toString();
     const isAdmin = req.user.role === 'admin';
     if (!isOwner && !isAdmin) return res.status(403).json({ message: 'Not authorized' });
 
+    if (place.visibility === 'public') {
+      await City.findOneAndUpdate({ name: { $regex: place.city, $options: 'i' } }, { $inc: { placeCount: -1 } });
+    }
     await place.deleteOne();
     res.json({ message: 'Place deleted' });
   } catch (err) {
