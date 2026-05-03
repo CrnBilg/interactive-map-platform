@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import { placesAPI, eventsAPI, citiesAPI, directionsAPI } from '../services/api'
 import { useSocket } from '../context/SocketContext'
@@ -26,6 +26,14 @@ const placeIcon = L.divIcon({
   popupAnchor: [0, -35],
 })
 
+const cityIcon = L.divIcon({
+  className: '',
+  html: `<div style="width:34px;height:34px;border-radius:50%;background:#f59e0b;border:2px solid #1c1917;box-shadow:0 2px 10px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:15px">🏛️</div>`,
+  iconSize: [34, 34],
+  iconAnchor: [17, 17],
+  popupAnchor: [0, -18],
+})
+
 const eventIcons = {
   concert: '🎵', flashmob: '💃', popup: '🛍️', exhibition: '🎨',
   festival: '🎉', protest: '📢', other: '⚡',
@@ -50,6 +58,29 @@ const liveCulturalEventIcon = L.divIcon({
 function MapController({ center, zoom }) {
   const map = useMap()
   useEffect(() => { if (center) map.setView(center, zoom || 13) }, [center, zoom])
+  return null
+}
+
+function getMapBoundsPayload(map) {
+  const bounds = map.getBounds()
+  return {
+    north: Number(bounds.getNorth().toFixed(6)),
+    south: Number(bounds.getSouth().toFixed(6)),
+    east: Number(bounds.getEast().toFixed(6)),
+    west: Number(bounds.getWest().toFixed(6)),
+  }
+}
+
+function MapBoundsTracker({ onViewportChange }) {
+  const map = useMapEvents({
+    moveend: () => onViewportChange(getMapBoundsPayload(map), map.getZoom()),
+    zoomend: () => onViewportChange(getMapBoundsPayload(map), map.getZoom()),
+  })
+
+  useEffect(() => {
+    onViewportChange(getMapBoundsPayload(map), map.getZoom())
+  }, [map, onViewportChange])
+
   return null
 }
 
@@ -93,6 +124,17 @@ const getEventStatus = (event) => {
   if (Math.abs(diffMs) <= liveWindowMs) return 'live'
   if (diffMs > 0) return 'upcoming'
   return null
+}
+
+function useDebouncedValue(value, delay = 250) {
+  const [debouncedValue, setDebouncedValue] = useState(value)
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setDebouncedValue(value), delay)
+    return () => window.clearTimeout(timeoutId)
+  }, [value, delay])
+
+  return debouncedValue
 }
 
 const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
@@ -269,6 +311,7 @@ export default function MapPage() {
   const [showPlaces, setShowPlaces] = useState(true)
   const [mapCenter, setMapCenter] = useState([39.1, 35.0])
   const [mapZoom, setMapZoom] = useState(6)
+  const [currentZoom, setCurrentZoom] = useState(6)
   const [showEventForm, setShowEventForm] = useState(false)
   const [panoramaPlace, setPanoramaPlace] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -278,6 +321,13 @@ export default function MapPage() {
   const [walkingPolyline, setWalkingPolyline] = useState([])
   const [weather, setWeather] = useState(null)
   const [showPredefined, setShowPredefined] = useState(false)
+  const [viewportBounds, setViewportBounds] = useState(null)
+  const debouncedSearchTerm = useDebouncedValue(searchTerm.trim(), 300)
+  const debouncedViewportBounds = useDebouncedValue(viewportBounds, 180)
+  const shouldRenderPlaceMarkers = currentZoom >= 8 || Boolean(selectedCity || debouncedSearchTerm || selectedCategory !== 'all')
+  const totalPlaceCount = selectedCity
+    ? places.length
+    : cities.reduce((sum, city) => sum + (city.placeCount || 0), 0)
 
   const getDemoEventTitle = (event) => language === 'tr' ? event.titleTR : event.titleEN
   const getDemoEventDescription = (event) => language === 'tr' ? event.descriptionTR : event.descriptionEN
@@ -314,6 +364,21 @@ export default function MapPage() {
       eventMarkerRefs.current[event.id]?.openPopup()
     }, 120)
   }
+  const handleViewportChange = useCallback((bounds, zoom) => {
+    setCurrentZoom(zoom)
+    setViewportBounds(current => {
+      if (
+        current &&
+        current.north === bounds.north &&
+        current.south === bounds.south &&
+        current.east === bounds.east &&
+        current.west === bounds.west
+      ) {
+        return current
+      }
+      return bounds
+    })
+  }, [])
 
   useEffect(() => {
     if (isLiveTab) {
@@ -404,22 +469,46 @@ export default function MapPage() {
   }, [routePlaces])
 
   useEffect(() => {
+    if (!debouncedViewportBounds) return
+
+    if (!shouldRenderPlaceMarkers) {
+      setPlaces([])
+      setLoading(false)
+      return
+    }
+
     const params = {}
     if (selectedCity) params.city = selectedCity.name
     if (selectedCategory !== 'all') params.category = selectedCategory
-    if (searchTerm) params.search = searchTerm
+    if (debouncedSearchTerm) params.search = debouncedSearchTerm
+    if (!debouncedSearchTerm) Object.assign(params, debouncedViewportBounds)
 
-    placesAPI.getAll({ ...params, limit: 500 }).then(res => {
-      setPlaces(res.data.places)
-      setLoading(false)
-    })
+    const ac = new AbortController()
+    setLoading(true)
+
+    placesAPI.getAll({ ...params, limit: 500, view: 'map' }, { signal: ac.signal })
+      .then(res => {
+        setPlaces(res.data.places)
+        setLoading(false)
+      })
+      .catch(err => {
+        if (!axios.isCancel(err) && err.name !== 'CanceledError') {
+          console.error('Places fetch error:', err)
+          setLoading(false)
+        }
+      })
 
     if (selectedCity) {
       eventsAPI.getAll({ city: selectedCity.name }).then(res => setLiveEvents(res.data))
       joinCity(selectedCity._id)
-      return () => leaveCity(selectedCity._id)
+      return () => {
+        ac.abort()
+        leaveCity(selectedCity._id)
+      }
     }
-  }, [selectedCity, selectedCategory, searchTerm])
+
+    return () => ac.abort()
+  }, [selectedCity, selectedCategory, debouncedSearchTerm, debouncedViewportBounds, shouldRenderPlaceMarkers])
 
   const handleCitySelect = (city) => {
     setSelectedCity(city)
@@ -554,7 +643,7 @@ export default function MapPage() {
           <button
             onClick={() => setShowPlaces(!showPlaces)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors flex-1 justify-center ${showPlaces ? 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30' : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'}`}
-          >🏛️ {t('map.places')} ({places.length})</button>
+          >🏛️ {t('map.places')} ({shouldRenderPlaceMarkers ? places.length : totalPlaceCount})</button>
           <button
             onClick={() => setShowEvents(!showEvents)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors flex-1 justify-center ${showEvents ? 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30' : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'}`}
@@ -734,12 +823,14 @@ export default function MapPage() {
           zoom={mapZoom}
           style={{ height: '100%', width: '100%' }}
           zoomControl={false}
+          preferCanvas
         >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
           <MapController center={mapCenter} zoom={mapZoom} />
+          <MapBoundsTracker onViewportChange={handleViewportChange} />
 
           {/* Sürüş Rotası (Sarı - Alt katman) */}
           {routePolyline.length >= 2 && (
@@ -786,8 +877,34 @@ export default function MapPage() {
             </>
           )}
 
+          {/* City markers at low zoom keep the all-Turkey view light. */}
+          {!isLiveTab && showPlaces && !shouldRenderPlaceMarkers && sortedCities.map(city => {
+            const displayCity = translateCity(city)
+
+            return (
+              <Marker
+                key={city._id}
+                position={[city.location.coordinates[1], city.location.coordinates[0]]}
+                icon={cityIcon}
+              >
+                <Popup>
+                  <div className="min-w-[170px]">
+                    <div className="font-semibold text-stone-100 text-sm mb-1">{displayCity.displayName}</div>
+                    <div className="text-stone-400 text-xs mb-3">{t('city.historicalPlaces', { count: city.placeCount || 0 })}</div>
+                    <button
+                      onClick={() => handleCitySelect(city)}
+                      className="w-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold py-1.5 rounded-lg transition-colors"
+                    >
+                      {t('common.openMap')}
+                    </button>
+                  </div>
+                </Popup>
+              </Marker>
+            )
+          })}
+
           {/* Place markers */}
-          {!isLiveTab && showPlaces && places.map(place => (
+          {!isLiveTab && showPlaces && shouldRenderPlaceMarkers && places.map(place => (
             <Marker
               key={place._id}
               position={[place.location.coordinates[1], place.location.coordinates[0]]}
@@ -890,7 +1007,7 @@ export default function MapPage() {
         {!isLiveTab && user && selectedCity && (
           <button
             onClick={() => setShowEventForm(true)}
-            className="absolute bottom-6 right-6 z-[1000] flex items-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full shadow-2xl transition-all active:scale-95 font-medium text-sm"
+            className="absolute bottom-6 left-6 z-[1000] flex items-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-400 text-white rounded-full shadow-2xl transition-all active:scale-95 font-medium text-sm"
           >
             <Zap size={16} /> {t('map.reportEvent')}
           </button>
