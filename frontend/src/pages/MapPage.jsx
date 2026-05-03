@@ -26,6 +26,14 @@ const placeIcon = L.divIcon({
   popupAnchor: [0, -35],
 })
 
+const selectedPlaceIcon = L.divIcon({
+  className: '',
+  html: `<div style="width:38px;height:38px;background:#facc15;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #1c1917;box-shadow:0 0 0 6px rgba(250,204,21,.22),0 0 28px rgba(245,158,11,.75),0 4px 12px rgba(0,0,0,.45)"><span style="display:block;transform:rotate(45deg);text-align:center;line-height:32px;font-size:16px">ğŸ›ï¸</span></div>`,
+  iconSize: [38, 38],
+  iconAnchor: [19, 38],
+  popupAnchor: [0, -41],
+})
+
 const cityIcon = L.divIcon({
   className: '',
   html: `<div style="width:34px;height:34px;border-radius:50%;background:#f59e0b;border:2px solid #1c1917;box-shadow:0 2px 10px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:15px">🏛️</div>`,
@@ -55,9 +63,16 @@ const liveCulturalEventIcon = L.divIcon({
   popupAnchor: [0, -22],
 })
 
-function MapController({ center, zoom }) {
+function MapController({ center, zoom, focusMode }) {
   const map = useMap()
-  useEffect(() => { if (center) map.setView(center, zoom || 13) }, [center, zoom])
+  useEffect(() => {
+    if (!center) return
+    if (focusMode) {
+      map.flyTo(center, zoom || 13)
+      return
+    }
+    map.setView(center, zoom || 13)
+  }, [center, zoom, focusMode, map])
   return null
 }
 
@@ -135,6 +150,11 @@ function useDebouncedValue(value, delay = 250) {
   }, [value, delay])
 
   return debouncedValue
+}
+
+const parseFiniteNumber = (value) => {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
 }
 
 const ORS_API_KEY = import.meta.env.VITE_ORS_API_KEY;
@@ -298,7 +318,14 @@ export default function MapPage() {
   const { language, t, translateCity, translatePlace, translateEvent, translateEntity } = useLanguage()
   const [searchParams] = useSearchParams()
   const isLiveTab = searchParams.get('tab') === 'live'
+  const focusedPlaceId = searchParams.get('place')
+  const focusedLat = parseFiniteNumber(searchParams.get('lat'))
+  const focusedLng = parseFiniteNumber(searchParams.get('lng'))
+  const focusedZoom = parseFiniteNumber(searchParams.get('zoom')) || 15
+  const hasFocusedPlaceParams = Boolean(focusedPlaceId && focusedLat !== null && focusedLng !== null)
+  const focusedCenter = hasFocusedPlaceParams ? [focusedLat, focusedLng] : null
   const eventMarkerRefs = useRef({})
+  const placeMarkerRefs = useRef({})
   const { user } = useAuth()
   const { liveEvents, setLiveEvents, joinCity, leaveCity } = useSocket()
   const { routePlaces, addToRoute, removeFromRoute, clearRoute, setRoutePlaces } = useRoute()
@@ -309,9 +336,9 @@ export default function MapPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [showEvents, setShowEvents] = useState(true)
   const [showPlaces, setShowPlaces] = useState(true)
-  const [mapCenter, setMapCenter] = useState([39.1, 35.0])
-  const [mapZoom, setMapZoom] = useState(6)
-  const [currentZoom, setCurrentZoom] = useState(6)
+  const [mapCenter, setMapCenter] = useState(focusedCenter || [39.1, 35.0])
+  const [mapZoom, setMapZoom] = useState(hasFocusedPlaceParams ? focusedZoom : 6)
+  const [currentZoom, setCurrentZoom] = useState(hasFocusedPlaceParams ? focusedZoom : 6)
   const [showEventForm, setShowEventForm] = useState(false)
   const [panoramaPlace, setPanoramaPlace] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -324,7 +351,7 @@ export default function MapPage() {
   const [viewportBounds, setViewportBounds] = useState(null)
   const debouncedSearchTerm = useDebouncedValue(searchTerm.trim(), 300)
   const debouncedViewportBounds = useDebouncedValue(viewportBounds, 180)
-  const shouldRenderPlaceMarkers = currentZoom >= 8 || Boolean(selectedCity || debouncedSearchTerm || selectedCategory !== 'all')
+  const shouldRenderPlaceMarkers = currentZoom >= 8 || Boolean(hasFocusedPlaceParams || selectedCity || debouncedSearchTerm || selectedCategory !== 'all')
   const totalPlaceCount = selectedCity
     ? places.length
     : cities.reduce((sum, city) => sum + (city.placeCount || 0), 0)
@@ -386,6 +413,15 @@ export default function MapPage() {
       setShowEvents(true)
     }
   }, [isLiveTab])
+
+  useEffect(() => {
+    if (!hasFocusedPlaceParams) return
+    setShowPlaces(true)
+    setSelectedCity(null)
+    setMapCenter(focusedCenter)
+    setMapZoom(focusedZoom)
+    setCurrentZoom(focusedZoom)
+  }, [hasFocusedPlaceParams, focusedLat, focusedLng, focusedZoom])
 
   useEffect(() => {
     citiesAPI.getAll().then(res => setCities(res.data))
@@ -481,7 +517,9 @@ export default function MapPage() {
     if (selectedCity) params.city = selectedCity.name
     if (selectedCategory !== 'all') params.category = selectedCategory
     if (debouncedSearchTerm) params.search = debouncedSearchTerm
-    if (!debouncedSearchTerm) Object.assign(params, debouncedViewportBounds)
+    if (!debouncedSearchTerm) {
+      Object.assign(params, debouncedViewportBounds)
+    }
 
     const ac = new AbortController()
     setLoading(true)
@@ -509,6 +547,14 @@ export default function MapPage() {
 
     return () => ac.abort()
   }, [selectedCity, selectedCategory, debouncedSearchTerm, debouncedViewportBounds, shouldRenderPlaceMarkers])
+
+  useEffect(() => {
+    if (!hasFocusedPlaceParams || !focusedPlaceId || places.length === 0) return
+    const timeoutId = window.setTimeout(() => {
+      placeMarkerRefs.current[focusedPlaceId]?.openPopup()
+    }, 160)
+    return () => window.clearTimeout(timeoutId)
+  }, [hasFocusedPlaceParams, focusedPlaceId, places])
 
   const handleCitySelect = (city) => {
     setSelectedCity(city)
@@ -829,7 +875,7 @@ export default function MapPage() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           />
-          <MapController center={mapCenter} zoom={mapZoom} />
+          <MapController center={mapCenter} zoom={mapZoom} focusMode={hasFocusedPlaceParams} />
           <MapBoundsTracker onViewportChange={handleViewportChange} />
 
           {/* Sürüş Rotası (Sarı - Alt katman) */}
@@ -904,11 +950,17 @@ export default function MapPage() {
           })}
 
           {/* Place markers */}
-          {!isLiveTab && showPlaces && shouldRenderPlaceMarkers && places.map(place => (
+          {!isLiveTab && showPlaces && shouldRenderPlaceMarkers && places.map(place => {
+            const isFocusedPlace = focusedPlaceId === place._id
+
+            return (
             <Marker
               key={place._id}
+              ref={(marker) => {
+                if (marker) placeMarkerRefs.current[place._id] = marker
+              }}
               position={[place.location.coordinates[1], place.location.coordinates[0]]}
-              icon={placeIcon}
+              icon={isFocusedPlace ? selectedPlaceIcon : placeIcon}
             >
               <Popup>
                 <div className="min-w-[200px]">
@@ -938,7 +990,8 @@ export default function MapPage() {
                 </div>
               </Popup>
             </Marker>
-          ))}
+            )
+          })}
 
           {/* Event markers */}
           {isLiveTab && visibleDemoEvents.map(event => (

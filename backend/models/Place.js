@@ -51,8 +51,16 @@ const placeSchema = new mongoose.Schema(
     visibility: { type: String, enum: ['public', 'private'], default: 'private' },
     approved: { type: Boolean, default: true },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
+
+placeSchema.virtual('lat').get(function getLat() {
+  return this.location?.coordinates?.[1];
+});
+
+placeSchema.virtual('lng').get(function getLng() {
+  return this.location?.coordinates?.[0];
+});
 
 placeSchema.pre('validate', function setHas360(next) {
   this.has360 = Boolean(
