@@ -1,6 +1,28 @@
-const axios = require('axios');
-
 const ORS_KEY = process.env.OPENROUTESERVICE_API_KEY || process.env.ORS_API_KEY;
+
+async function fetchJson(url, options = {}, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const error = new Error(data?.error?.message || data?.message || `${response.status} ${response.statusText}`);
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
+
+    return data;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 /**
  * OpenRouteService — preference: shortest (mesafe açısından en kısa rota).
@@ -8,20 +30,21 @@ const ORS_KEY = process.env.OPENROUTESERVICE_API_KEY || process.env.ORS_API_KEY;
 async function fetchOpenRouteService(coordinates, profile) {
   if (!ORS_KEY) return null;
   try {
-    const { data } = await axios.post(
+    const data = await fetchJson(
       `https://api.openrouteservice.org/v2/directions/${profile}/geojson`,
       {
-        coordinates,
-        preference: 'shortest',
-        units: 'm',
-      },
-      {
+        method: 'POST',
         headers: {
           Authorization: ORS_KEY,
           'Content-Type': 'application/json',
         },
-        timeout: 30000,
-      }
+        body: JSON.stringify({
+          coordinates,
+          preference: 'shortest',
+          units: 'm',
+        }),
+      },
+      30000
     );
     const feature = data.features?.[0];
     if (!feature?.geometry?.coordinates) return null;
@@ -33,7 +56,7 @@ async function fetchOpenRouteService(coordinates, profile) {
       source: 'openrouteservice',
     };
   } catch (err) {
-    console.error(`ORS ${profile}:`, err.response?.data || err.message);
+    console.error(`ORS ${profile}:`, err.data || err.message);
     return null;
   }
 }
@@ -65,7 +88,7 @@ async function fetchOsrm(coordinates, profile) {
     
     console.log(`OSM Request [${profile}]: ${url}`);
     
-    const { data } = await axios.get(url, { timeout: 20000 });
+    const data = await fetchJson(url, {}, 20000);
     const route = data.routes?.[0];
     
     if (!route) {
@@ -104,7 +127,7 @@ async function fetchStandardOsrm(coordinates, profile) {
     const coordStr = coordinates.map((c) => `${c[0]},${c[1]}`).join(';');
     const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${coordStr}?overview=full&geometries=geojson`;
     
-    const { data } = await axios.get(url, { timeout: 15000 });
+    const data = await fetchJson(url, {}, 15000);
     const route = data.routes?.[0];
     if (!route) return null;
     

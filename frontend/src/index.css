@@ -218,14 +218,10 @@
   .chip-strip::after { bottom: 0; }
   .chip-marquee:hover { animation-play-state: paused; }
   .chip-pill {
-    @apply inline-flex items-center gap-3 rounded-full px-[18px] py-2 text-sm font-semibold text-gold-bright/90 transition;
+    @apply inline-flex cursor-default items-center gap-3 rounded-full px-[18px] py-2 text-sm font-semibold text-gold-bright/90;
     border: 1px solid hsl(var(--gold-line) / 0.35);
     background: linear-gradient(180deg, hsl(var(--chip-top)), hsl(var(--chip-bottom)));
     box-shadow: inset 0 1px 0 hsl(var(--gold-bright) / 0.15), 0 8px 24px hsl(var(--shadow-black) / 0.38);
-  }
-  .chip-pill:hover {
-    border-color: hsl(var(--gold-bright) / 0.55);
-    box-shadow: inset 0 1px 0 hsl(var(--gold-bright) / 0.24), 0 0 16px hsl(var(--gold-bright) / 0.4);
   }
   .chip-dot {
     @apply h-1.5 w-1.5 rounded-full bg-gold-bright;
@@ -266,6 +262,15 @@
     box-shadow: inset 0 0 0 1px hsl(var(--gold-bright) / 0.18), inset 0 0 60px hsl(var(--gold) / 0.12), 0 0 32px hsl(var(--gold-bright) / 0.5), 0 26px 80px hsl(var(--shadow-black) / 0.72);
   }
   .lux-card:hover::after { opacity: 1; }
+  .lux-card-static:hover {
+    transform: none;
+    border-color: hsl(var(--gold-line) / 0.5);
+    box-shadow: inset 0 0 0 1px hsl(var(--gold-bright) / 0.15), inset 0 0 40px hsl(var(--gold) / 0.08), 0 20px 60px hsl(var(--shadow-black) / 0.6);
+  }
+  .lux-card-static::after,
+  .lux-card-static:hover::after {
+    opacity: 0;
+  }
   .card-title-gold {
     @apply bg-gradient-to-b from-gold-soft to-gold-deep bg-clip-text font-display font-semibold text-transparent;
   }
@@ -412,6 +417,10 @@
 .leaflet-control-attribution {
   background: hsl(var(--bg-black) / 0.8) !important;
   color: hsl(var(--gold) / 0.55) !important;
+  max-width: calc(100vw - 120px);
+  white-space: normal;
+  border-radius: 4px 0 0 0;
+  line-height: 1.25;
 }
 .leaflet-control-attribution a { color: hsl(var(--gold-bright)) !important; }
 .leaflet-routing-container { display: none !important; }

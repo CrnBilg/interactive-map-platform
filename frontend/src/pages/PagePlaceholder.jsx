@@ -23,7 +23,7 @@ export default function PagePlaceholder({ title, subtitle, children }) {
       <main className="min-h-screen bg-bg-deepest text-parchment">
         <section className="lux-section px-5 py-28 sm:px-8 lg:px-16">
           <div className="relative z-[4] mx-auto max-w-5xl">
-            <article className="lux-card px-6 py-14 text-center sm:px-10 lg:px-16">
+            <article className="lux-card lux-card-static px-6 py-14 text-center sm:px-10 lg:px-16">
               <CornerFrame />
               <p className="section-label">{t('pages.common.eyebrow')}</p>
               <h1 className="card-title-gold mt-4 font-display text-5xl font-semibold leading-none sm:text-6xl">
@@ -56,7 +56,7 @@ export default function PagePlaceholder({ title, subtitle, children }) {
 
 export function InfoPanel({ id, title, children }) {
   return (
-    <section id={id} className="lux-card scroll-mt-28 p-6 sm:p-8">
+    <section id={id} className="lux-card lux-card-static scroll-mt-28 p-6 sm:p-8">
       <CornerFrame />
       <h2 className="card-title-gold relative z-[2] font-display text-3xl font-semibold">{title}</h2>
       <div className="relative z-[2] mt-4 leading-[1.8] text-parchment/70">{children}</div>

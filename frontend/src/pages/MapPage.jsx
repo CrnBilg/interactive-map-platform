@@ -109,119 +109,151 @@ const PREDEFINED_ROUTES = [
   {
     id: 'istanbul-osmanli',
     name: 'İstanbul: Osmanlı Turu',
+    nameEn: 'Istanbul: Ottoman Tour',
     city: 'İstanbul',
     description: 'Sultanahmet merkezli klasik bir rota.',
+    descriptionEn: 'A classic route centered around Sultanahmet.',
     placeNames: ['Topkapı Sarayı', 'Ayasofya', 'Sultanahmet Camii', 'Kapalıçarşı', 'Rumeli Hisarı']
   },
   {
     id: 'ankara-milli',
     name: 'Ankara: Milli Mücadele',
+    nameEn: 'Ankara: War of Independence',
     city: 'Ankara',
     description: 'Cumhuriyetin kuruluş izleri.',
+    descriptionEn: 'Traces of the Republic’s founding years.',
     placeNames: ['Anıtkabir', 'Ankara Kalesi', 'Anadolu Medeniyetleri Müzesi', 'Haci Bayram Veli Camii']
   },
   {
     id: 'konya-mevlana',
     name: 'Konya: Mevlana İzinde',
+    nameEn: 'Konya: In Mevlana’s Footsteps',
     city: 'Konya',
     description: 'Selçuklu ve Mevlevilik kültürü.',
+    descriptionEn: 'Seljuk heritage and Mevlevi culture.',
     placeNames: ['Mevlana Müzesi', 'Alaeddin Camii', 'Sille']
   },
   {
     id: 'izmir-ege',
     name: 'İzmir: Ege Antikleri',
+    nameEn: 'Izmir: Aegean Antiquities',
     city: 'İzmir',
     description: 'İzmir ili sınırları içindeki antik ve kent merkezi durakları.',
+    descriptionEn: 'Ancient sites and city-center stops across Izmir.',
     placeNames: ['Kemeraltı Çarşısı', 'Agora Ören Yeri', 'Kadifekale', 'Efes Antik Kenti']
   },
   {
     id: 'bursa-osmanli-baskent',
     name: 'Bursa: Osmanlı Başkenti',
+    nameEn: 'Bursa: Ottoman Capital',
     city: 'Bursa',
     description: 'Yeşil, hanlar ve erken dönem Osmanlı izleri.',
+    descriptionEn: 'Green Bursa, historic inns, and early Ottoman traces.',
     placeNames: ['Yeşil Camii', 'Koza Han', 'Muradiye Külliyesi', 'Bursa Kalesi']
   },
   {
     id: 'edirne-saray',
     name: 'Edirne: Sinan ve Saray',
+    nameEn: 'Edirne: Sinan and Palace Route',
     city: 'Edirne',
     description: 'Selimiye merkezli klasik Edirne turu.',
+    descriptionEn: 'A classic Edirne tour centered around Selimiye.',
     placeNames: ['Selimiye Camii', 'Eski Camii', 'Üç Şerefeli Camii', 'Meriç Köprüsü']
   },
   {
     id: 'antalya-antik',
     name: 'Antalya: Pamfilya Kalıntıları',
+    nameEn: 'Antalya: Pamphylian Ruins',
     city: 'Antalya',
     description: 'Perge ve Aspendos antik mirası.',
+    descriptionEn: 'The ancient heritage of Perge and Aspendos.',
     placeNames: ['Perge Antik Kenti', 'Aspendos Tiyatrosu']
   },
   {
     id: 'cappadocia-peri',
     name: 'Kapadokya: Peri Bacaları',
+    nameEn: 'Cappadocia: Fairy Chimneys',
     city: 'Cappadocia',
     description: 'Yeraltı şehirleri ve vadiler.',
+    descriptionEn: 'Underground cities and valleys.',
     placeNames: ['Derinkuyu Yeraltı Şehri', 'Kaymakli Yeralti Sehri', 'Göreme Açık Hava Müzesi', 'Uchisar Kalesi']
   },
   {
     id: 'samsun-kurtulus',
     name: 'Samsun: Kurtuluş Rotası',
+    nameEn: 'Samsun: Independence Route',
     city: 'Samsun',
     description: 'Bandırma’dan İlkadım’a Milli Mücadele hafızası.',
+    descriptionEn: 'Memory of the National Struggle from Bandırma to İlkadım.',
     placeNames: ['Bandırma Gemi-Müzesi', 'İlkadım Anıtı', 'Kurtuluş Yolu Başlangıç Noktası']
   },
   {
     id: 'canakkale-troya',
     name: 'Çanakkale: Troya’dan Gelibolu’ya',
+    nameEn: 'Canakkale: From Troy to Gallipoli',
     city: 'Çanakkale',
     description: 'Antik kentler ve yakın tarih.',
+    descriptionEn: 'Ancient cities and modern history.',
     placeNames: ['Troya Antik Kenti', 'Assos Antik Kenti', 'Çanakkale Şehitler Abidesi', 'Kilitbahir Kalesi']
   },
   {
     id: 'gaziantep-mozaik',
     name: 'Gaziantep: Mozaik ve Çarşı',
+    nameEn: 'Gaziantep: Mosaics and Bazaar',
     city: 'Gaziantep',
     description: 'Zeugma’dan bakırcılar çarşısına.',
+    descriptionEn: 'From Zeugma to the coppersmiths’ bazaar.',
     placeNames: ['Zeugma Mozaik Müzesi', 'Gaziantep Kalesi', 'Bakırcılar Çarşısı', 'Zincirli Bedesten']
   },
   {
     id: 'sanliurfa-peygamber',
     name: 'Şanlıurfa: Tarihin Başlangıcı',
+    nameEn: 'Sanliurfa: The Beginning of History',
     city: 'Şanlıurfa',
     description: 'Göbeklitepe, Harran ve kutsal merkez.',
+    descriptionEn: 'Gobeklitepe, Harran, and the sacred center.',
     placeNames: ['Göbeklitepe', 'Balıklıgöl', 'Haleplibahçe Mozaik Müzesi', 'Harran Antik Kenti']
   },
   {
     id: 'denizli-pamukkale',
     name: 'Denizli: Traverten ve Antik Kentler',
+    nameEn: 'Denizli: Travertines and Ancient Cities',
     city: 'Denizli',
     description: 'Pamukkale ve çevresindeki ören yerleri.',
+    descriptionEn: 'Pamukkale and the ancient sites around it.',
     placeNames: ['Pamukkale Travertenleri', 'Hierapolis Antik Kenti', 'Laodikeia Antik Kenti']
   },
   {
     id: 'diyarbakir-sur',
     name: 'Diyarbakır: Surlar ve Dicle',
+    nameEn: 'Diyarbakir: Walls and the Tigris',
     city: 'Diyarbakır',
     description: 'UNESCO surları ve Hevsel bahçeleri.',
+    descriptionEn: 'UNESCO city walls and the Hevsel Gardens.',
     placeNames: ['Diyarbakır Surları', 'Hevsel Bahçeleri', 'Hasan Paşa Hanı']
   },
   {
     id: 'mardin-tas',
     name: 'Mardin: Taş Şehir',
+    nameEn: 'Mardin: Stone City',
     city: 'Mardin',
     description: 'Medreseler ve Süryani mirası.',
+    descriptionEn: 'Madrasas and Syriac heritage.',
     placeNames: ['Mardin Eski Şehir', 'Kasımiye Medresesi', 'Deyrulzafaran Manastırı']
   },
   {
     id: 'van-urartu',
     name: 'Van: Urartu İzleri',
+    nameEn: 'Van: Urartian Traces',
     city: 'Van',
     description: 'Tuşpa, müze ve Akdamar.',
+    descriptionEn: 'Tushpa, the museum, and Akdamar.',
     placeNames: ['Van Kalesi', 'Van Müzesi', 'Akdamar Kilisesi']
   }
 ];
 
 export default function MapPage() {
-  const { language, t, translateCity, translatePlace, translateEvent } = useLanguage()
+  const { language, t, translateCity, translatePlace, translateEvent, translateEntity } = useLanguage()
   const [searchParams] = useSearchParams()
   const isLiveTab = searchParams.get('tab') === 'live'
   const eventMarkerRefs = useRef({})
@@ -253,6 +285,16 @@ export default function MapPage() {
     if (status === 'live') return language === 'tr' ? t('map.liveStatus') : 'LIVE'
     return language === 'tr' ? t('map.upcoming') : 'UPCOMING'
   }
+  const getRouteName = (route) => language === 'tr' ? route.name : route.nameEn
+  const getRouteDescription = (route) => language === 'tr' ? route.description : route.descriptionEn
+  const predefinedRoutesLabel = language === 'tr' ? 'Hazır Rotalar' : 'Ready Routes'
+  const predefinedRoutesTitle = language === 'tr' ? 'Hazır Tematik Rotalar' : 'Ready Thematic Routes'
+  const sortedCities = [...cities].sort((a, b) =>
+    translateCity(a).displayName.localeCompare(translateCity(b).displayName, language === 'tr' ? 'tr' : 'en', {
+      sensitivity: 'base',
+      numeric: true,
+    })
+  )
   const visibleDemoEvents = demoEvents
     .map(event => ({
       ...event,
@@ -264,6 +306,7 @@ export default function MapPage() {
       if (a.computedStatus !== b.computedStatus) return a.computedStatus === 'live' ? -1 : 1
       return a.eventDate - b.eventDate
     })
+  const displayedEvents = liveEvents.length > 0 ? liveEvents : visibleDemoEvents
   const focusDemoEvent = (event) => {
     setMapCenter(event.coordinates)
     setMapZoom(13)
@@ -422,22 +465,30 @@ export default function MapPage() {
         if (city) handleCitySelect(city)
 
         if (missing.length > 0) {
-          toast.success(`${route.name}: ${selectedPlaces.length}/${route.placeNames.length} mekan yüklendi. Bulunamayan: ${missing.join(', ')}`)
+          toast.success(
+            language === 'tr'
+              ? `${getRouteName(route)}: ${selectedPlaces.length}/${route.placeNames.length} mekan yüklendi. Bulunamayan: ${missing.join(', ')}`
+              : `${getRouteName(route)}: ${selectedPlaces.length}/${route.placeNames.length} places loaded. Missing: ${missing.join(', ')}`
+          )
         } else {
-          toast.success(`${route.name} yüklendi!`)
+          toast.success(language === 'tr' ? `${getRouteName(route)} yüklendi!` : `${getRouteName(route)} loaded!`)
         }
         setShowPredefined(false)
       } else {
-        toast.error(`Bu rota için ${route.city} ili kayıtlarında mekan bulunamadı.`)
+        toast.error(
+          language === 'tr'
+            ? `Bu rota için ${route.city} ili kayıtlarında mekan bulunamadı.`
+            : `No places were found in ${translateEntity(route.city)} records for this route.`
+        )
       }
     } catch (err) {
       console.error('Error loading predefined route:', err)
-      toast.error('Rota yüklenirken hata oluştu.')
+      toast.error(language === 'tr' ? 'Rota yüklenirken hata oluştu.' : 'An error occurred while loading the route.')
     }
   }
 
   return (
-    <div className="h-[calc(100vh-64px)] flex">
+    <div className="h-[calc(100vh-72px)] flex">
       {/* Sidebar */}
       <div className="w-80 shrink-0 bg-white dark:bg-stone-900 border-r border-stone-200 dark:border-stone-800 flex flex-col overflow-y-auto overflow-x-hidden transition-colors duration-300">
         {/* Search */}
@@ -469,7 +520,7 @@ export default function MapPage() {
               onClick={() => { setSelectedCity(null); setMapCenter([39.1, 35.0]); setMapZoom(6) }}
               className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${!selectedCity ? 'bg-amber-500 text-stone-950 font-semibold shadow-sm' : 'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}`}
             >{t('common.allTurkey')}</button>
-            {cities.map(city => (
+            {sortedCities.map(city => (
               <button
                 key={city._id}
                 onClick={() => handleCitySelect(city)}
@@ -507,7 +558,7 @@ export default function MapPage() {
           <button
             onClick={() => setShowEvents(!showEvents)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors flex-1 justify-center ${showEvents ? 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30' : 'bg-stone-100 dark:bg-stone-800 text-stone-400 dark:text-stone-500'}`}
-          >⚡ {isLiveTab ? t('map.liveCulturalEvents') : t('map.live')} ({isLiveTab ? visibleDemoEvents.length : liveEvents.length})</button>
+          >⚡ {isLiveTab ? t('map.liveCulturalEvents') : t('map.live')} ({isLiveTab ? visibleDemoEvents.length : displayedEvents.length})</button>
         </div>
 
         {isLiveTab && (
@@ -572,7 +623,7 @@ export default function MapPage() {
               <button 
                 onClick={() => setShowPredefined(!showPredefined)}
                 className={`p-1.5 rounded-lg transition-colors ${showPredefined ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-600' : 'text-stone-400 hover:text-amber-500'}`}
-                title="Hazır Rotalar"
+                title={predefinedRoutesLabel}
               >
                 <Compass size={16} />
               </button>
@@ -588,7 +639,7 @@ export default function MapPage() {
             {showPredefined && (
               <div className="absolute inset-0 z-10 bg-white/95 dark:bg-stone-900/95 p-3 space-y-3 animate-in slide-in-from-right">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-xs font-bold text-stone-500 uppercase tracking-tighter">Hazır Tematik Rotalar</div>
+                  <div className="text-xs font-bold text-stone-500 uppercase tracking-tighter">{predefinedRoutesTitle}</div>
                   <button onClick={() => setShowPredefined(false)} className="text-stone-400 hover:text-stone-600"><X size={14}/></button>
                 </div>
                 {PREDEFINED_ROUTES.map(route => (
@@ -597,9 +648,9 @@ export default function MapPage() {
                     onClick={() => handleLoadPredefined(route)}
                     className="w-full text-left p-3 rounded-xl border border-stone-200 dark:border-stone-700 hover:border-amber-400 dark:hover:border-amber-500 transition-all bg-white dark:bg-stone-800 group"
                   >
-                    <div className="text-xs font-bold text-amber-600 dark:text-amber-500 mb-1">{route.city}</div>
-                    <div className="text-sm font-semibold text-stone-800 dark:text-stone-200 group-hover:text-amber-600 transition-colors">{route.name}</div>
-                    <div className="text-[10px] text-stone-500 mt-1">{route.description}</div>
+                    <div className="text-xs font-bold text-amber-600 dark:text-amber-500 mb-1">{translateEntity(route.city)}</div>
+                    <div className="text-sm font-semibold text-stone-800 dark:text-stone-200 group-hover:text-amber-600 transition-colors">{getRouteName(route)}</div>
+                    <div className="text-[10px] text-stone-500 mt-1">{getRouteDescription(route)}</div>
                   </button>
                 ))}
               </div>
@@ -801,23 +852,38 @@ export default function MapPage() {
             </Marker>
           ))}
 
-          {!isLiveTab && showEvents && liveEvents.map(event => (
-            <Marker key={event._id} position={[event.location.coordinates[1], event.location.coordinates[0]]} icon={createEventIcon(event.type)}>
-              <Popup>
-                <div className="min-w-[180px]">
-                  <div className="flex items-center gap-1 mb-1">
-                    <span className="live-dot w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-                    <span className="text-emerald-400 text-xs">{t('map.liveEvent')}</span>
+          {!isLiveTab && showEvents && displayedEvents.map(event => {
+            const isDemoEvent = !event._id
+            const eventTitle = isDemoEvent ? getDemoEventTitle(event) : translateEvent(event).displayTitle
+            const eventDescription = isDemoEvent ? getDemoEventDescription(event) : translateEvent(event).displayDescription
+            const eventMeta = isDemoEvent
+              ? `${event.city}${event.venue ? ` · ${event.venue}` : ''}`
+              : translateEvent(event).displayCity
+            const eventTime = isDemoEvent
+              ? `${event.date} · ${event.time}`
+              : formatDistanceToNow(new Date(event.createdAt), { addSuffix: true, locale: language === 'tr' ? tr : enUS })
+
+            return (
+              <Marker
+                key={event._id || event.id}
+                position={isDemoEvent ? event.coordinates : [event.location.coordinates[1], event.location.coordinates[0]]}
+                icon={isDemoEvent ? liveCulturalEventIcon : createEventIcon(event.type)}
+              >
+                <Popup>
+                  <div className="min-w-[180px]">
+                    <div className="flex items-center gap-1 mb-1">
+                      <span className="live-dot w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                      <span className="text-emerald-400 text-xs">{isDemoEvent ? getDemoEventStatusLabel(event.computedStatus) : t('map.liveEvent')}</span>
+                    </div>
+                    <div className="font-semibold text-stone-100 text-sm">{eventTitle}</div>
+                    <div className="text-stone-500 text-xs mt-1">{eventMeta}</div>
+                    <div className="text-stone-400 text-xs mt-1">{eventDescription}</div>
+                    <div className="text-stone-500 text-xs mt-1">{eventTime}</div>
                   </div>
-                  <div className="font-semibold text-stone-100 text-sm">{translateEvent(event).displayTitle}</div>
-                  <div className="text-stone-400 text-xs mt-1">{translateEvent(event).displayDescription}</div>
-                  <div className="text-stone-500 text-xs mt-1">
-                    {formatDistanceToNow(new Date(event.createdAt), { addSuffix: true, locale: language === 'tr' ? tr : enUS })}
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+                </Popup>
+              </Marker>
+            )
+          })}
         </MapContainer>
 
         {/* Floating add event button */}
