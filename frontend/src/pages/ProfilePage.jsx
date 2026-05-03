@@ -3,7 +3,9 @@ import { useAuth } from '../context/AuthContext'
 import { authAPI, placesAPI } from '../services/api'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, Bookmark, Compass, LogOut, MapPin, Plus, Puzzle, Route, Settings, Target, Trophy, User, Zap } from 'lucide-react'
+import Lottie from 'lottie-react'
 import toast from 'react-hot-toast'
+import explorerGuide from '../assets/animations/explorer-guide.json'
 import { useLanguage } from '../i18n/LanguageContext'
 import DiscoveryPuzzle, { DISCOVERIES_PER_LEVEL, getDiscoveryLevelTitleKey, getDiscoveryProgress } from '../components/DiscoveryPuzzle'
 
@@ -96,9 +98,9 @@ export default function ProfilePage() {
           </div>
         </header>
 
-        <div className="mt-8 grid items-start gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className="profile-fade-up lux-card h-auto self-start p-6 text-center transition duration-300 hover:scale-[1.01] hover:shadow-[0_0_36px_hsl(var(--gold-bright)/0.22),0_20px_60px_hsl(var(--shadow-black)/0.65)] [animation-delay:90ms]">
-            <div className="relative z-10">
+        <div className="mt-8 grid items-start gap-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-stretch">
+          <aside className="profile-fade-up lux-card h-auto self-start p-6 text-center transition duration-300 hover:scale-[1.01] hover:shadow-[0_0_36px_hsl(var(--gold-bright)/0.22),0_20px_60px_hsl(var(--shadow-black)/0.65)] [animation-delay:90ms] lg:h-full lg:self-stretch">
+            <div className="relative z-10 flex h-full flex-col">
               <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full border border-gold/45 bg-gradient-to-br from-gold-bright to-gold-deep text-4xl font-bold text-bg-deep shadow-gold-bloom">
                 {initial}
               </div>
@@ -244,6 +246,47 @@ export default function ProfilePage() {
               <button onClick={() => { logout(); navigate('/') }} className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg py-2 text-sm text-red-400 transition-colors hover:text-red-300">
                 <LogOut size={14} /> {t('profile.logout')}
               </button>
+
+              <div className="relative mt-5 flex min-h-[220px] flex-1 flex-col overflow-hidden rounded-xl border border-gold/25 bg-bg-black/65 p-4 pb-4 text-left shadow-[inset_0_0_0_1px_hsl(var(--gold-bright)/0.08),0_0_22px_hsl(var(--gold-bright)/0.12)] transition duration-300 hover:-translate-y-0.5 hover:border-gold/45 sm:min-h-[235px]">
+                <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(hsl(var(--gold-line)/0.45)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--gold-line)/0.35)_1px,transparent_1px)] [background-size:18px_18px]" />
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_78%,hsl(var(--gold-bright)/0.18),transparent_38%),linear-gradient(145deg,transparent,hsl(var(--bg-black)/0.64))]" />
+                <svg viewBox="0 0 160 116" className="pointer-events-none absolute bottom-0 right-0 h-28 w-40 text-gold-bright opacity-40" aria-hidden="true">
+                  <path d="M32 86 C58 52 82 92 106 56 S132 36 148 52" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeDasharray="4 7" opacity="0.5" />
+                  {[ [42, 76], [96, 62], [136, 48] ].map(([cx, cy]) => (
+                    <g key={`${cx}-${cy}`}>
+                      <circle cx={cx} cy={cy} r="7" fill="hsl(var(--bg-black))" stroke="currentColor" strokeWidth="1.4" opacity="0.85" />
+                      <circle cx={cx} cy={cy} r="2" fill="currentColor" />
+                    </g>
+                  ))}
+                </svg>
+                <div className="relative z-10 flex h-full flex-1 flex-col justify-between">
+                  <div>
+                    <div className="mb-3 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-gold/75">
+                      <Compass size={13} />
+                      {t('profile.explorerGuideLabel')}
+                    </div>
+                    <h3 className="font-display text-base font-semibold leading-snug text-stone-100">
+                      {t('profile.explorerGuideTitle')}
+                    </h3>
+                    <p className="mt-2 text-xs leading-5 text-stone-500">
+                      {t('profile.explorerGuideSubtitle')}
+                    </p>
+                  </div>
+                  <Lottie
+                    animationData={explorerGuide}
+                    loop
+                    autoplay
+                    style={{
+                      width: 166,
+                      margin: '18px auto 0',
+                      opacity: 0.9,
+                      filter: 'brightness(0.9) contrast(1.05)',
+                      transform: 'scale(1.06)',
+                      transformOrigin: 'center bottom',
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </aside>
 
