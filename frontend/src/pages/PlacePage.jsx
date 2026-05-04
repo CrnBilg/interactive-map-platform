@@ -182,9 +182,6 @@ export default function PlacePage() {
               <Globe size={14} /> {t('common.website')}
             </a>
           )}
-          <Link to={`/map?city=${place.city}`} className="card p-3 flex items-center gap-2 text-stone-400 hover:text-stone-200 transition-colors text-sm">
-            <MapPin size={14} /> {t('place.showOnMap')}
-          </Link>
         </div>
       </div>
 

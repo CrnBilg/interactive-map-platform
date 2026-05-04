@@ -123,7 +123,7 @@ async function fetchOsrm(coordinates, profile) {
 /** Fallback to standard OSRM if specialized ones fail */
 async function fetchStandardOsrm(coordinates, profile) {
   try {
-    const osrmProfile = profile === 'foot-walking' ? 'foot' : 'car';
+    const osrmProfile = profile === 'foot-walking' ? 'foot' : 'driving';
     const coordStr = coordinates.map((c) => `${c[0]},${c[1]}`).join(';');
     const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${coordStr}?overview=full&geometries=geojson`;
     
@@ -136,7 +136,7 @@ async function fetchStandardOsrm(coordinates, profile) {
       distance: route.distance,
       duration: route.duration,
       geometry,
-      source: 'osrm-fallback',
+      source: `osrm-fallback-${osrmProfile}`,
     };
   } catch (err) {
     return null;
@@ -155,7 +155,13 @@ const postDirections = async (req, res) => {
       return res.status(400).json({ message: 'Geçersiz profile.' });
     }
 
-    let result = await fetchOpenRouteService(coordinates, profile);
+    let result = null;
+    if (profile === 'driving-car') {
+      result = await fetchOsrm(coordinates, profile);
+      if (!result) result = await fetchOpenRouteService(coordinates, profile);
+    } else {
+      result = await fetchOpenRouteService(coordinates, profile);
+    }
     if (
       profile === 'foot-walking' &&
       result &&
@@ -164,12 +170,12 @@ const postDirections = async (req, res) => {
       console.warn('ORS foot-walking süresi şüpheli; OSRM deneniyor.');
       result = null;
     }
-    if (!result) result = await fetchOsrm(coordinates, profile);
+    if (!result && profile === 'foot-walking') result = await fetchOsrm(coordinates, profile);
 
     if (!result) {
       return res.status(502).json({ message: 'Rota servisi şu an yanıt vermiyor.' });
     }
-    res.json(result);
+    res.json({ ...result, profile });
   } catch (err) {
     console.error('postDirections:', err);
     res.status(500).json({ message: err.message || 'Sunucu hatası.' });

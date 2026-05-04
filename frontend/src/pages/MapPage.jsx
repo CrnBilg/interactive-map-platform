@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline, Pane } from 'react-leaflet'
 import L from 'leaflet'
 import { placesAPI, eventsAPI, citiesAPI, directionsAPI } from '../services/api'
 import { useSocket } from '../context/SocketContext'
@@ -430,6 +430,8 @@ export default function MapPage() {
         // Clear summaries to show loading state
         setRouteSummary(null)
         setWalkingSummary(null)
+        setRoutePolyline([])
+        setWalkingPolyline([])
 
         const [driveRes, walkRes] = await Promise.allSettled([
           directionsAPI.route(coordinates, 'driving-car', { signal: ac.signal }),
@@ -833,49 +835,72 @@ export default function MapPage() {
           <MapBoundsTracker onViewportChange={handleViewportChange} />
 
           {/* Sürüş Rotası (Sarı - Alt katman) */}
-          {routePolyline.length >= 2 && (
-            <Polyline
-              positions={routePolyline}
-              pathOptions={{ 
-                color: '#f59e0b', 
-                weight: 7, 
-                opacity: 0.8,
-                lineCap: 'round',
-                lineJoin: 'round'
-              }}
-            />
-          )}
+          <Pane name="driving-route-pane" style={{ zIndex: 430, pointerEvents: 'none' }}>
+            {routePolyline.length >= 2 && (
+              <>
+                <Polyline
+                  positions={routePolyline}
+                  interactive={false}
+                  pathOptions={{
+                    color: '#1c1917',
+                    weight: 11,
+                    opacity: 0.35,
+                    interactive: false,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                  }}
+                />
+                <Polyline
+                  positions={routePolyline}
+                  interactive={false}
+                  pathOptions={{
+                    color: '#f59e0b',
+                    weight: 7,
+                    opacity: 1,
+                    interactive: false,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                  }}
+                />
+              </>
+            )}
+          </Pane>
 
           {/* Yürüyüş Rotası (Yeşil Kesikli - Üst katman) */}
-          {walkingPolyline.length >= 2 && (
-            <>
+          <Pane name="walking-route-pane" style={{ zIndex: 440, pointerEvents: 'none' }}>
+            {walkingPolyline.length >= 2 && (
+              <>
               {/* Kontrast için Beyaz Dış Çerçeve */}
               <Polyline
                 positions={walkingPolyline}
+                interactive={false}
                 pathOptions={{
                   color: '#ffffff',
-                  weight: 8,
-                  opacity: 0.9,
+                  weight: 6,
+                  opacity: 0.65,
+                  dashArray: '6, 12',
+                  interactive: false,
                   lineCap: 'round',
                   lineJoin: 'round',
-                  pane: 'popupPane'
                 }}
               />
               {/* Belirgin Yeşil Kesikli Hat */}
               <Polyline
                 positions={walkingPolyline}
+                interactive={false}
                 pathOptions={{
                   color: '#16a34a', // Daha güçlü bir yeşil
-                  weight: 5,
-                  opacity: 1,
-                  dashArray: '8, 8', // Daha görünür kesikler
+                  weight: 4,
+                  opacity: 0.95,
+                  dashArray: '6, 12',
+                  interactive: false,
                   lineCap: 'round',
                   lineJoin: 'round',
-                  pane: 'popupPane'
                 }}
               />
-            </>
-          )}
+              </>
+            )}
+          </Pane>
 
           {/* City markers at low zoom keep the all-Turkey view light. */}
           {!isLiveTab && showPlaces && !shouldRenderPlaceMarkers && sortedCities.map(city => {
