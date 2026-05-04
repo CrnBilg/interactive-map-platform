@@ -4,12 +4,12 @@ const User = require('../models/User');
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
 const TURKISH_CHARS = {
-  c: '[c\\u00e7]',
-  g: '[g\\u011f]',
-  i: '[i\\u0131\\u0130I]',
-  o: '[o\\u00f6]',
-  s: '[s\\u015f]',
-  u: '[u\\u00fc]',
+  c: '[cç]',
+  g: '[gğ]',
+  i: '[iıİI]',
+  o: '[oö]',
+  s: '[sş]',
+  u: '[uü]',
 };
 
 const cleanMessages = (messages = []) =>
@@ -159,7 +159,10 @@ const chat = async (req, res) => {
     res.json({ reply });
   } catch (err) {
     console.error('Chat Controller Error:', err);
-    res.status(502).json({ message: err.message || 'Chat provider request failed.' });
+    const message = err.message === 'fetch failed'
+      ? 'Could not reach OpenRouter from the backend. Check your internet connection, OPENROUTER_API_KEY, and restart the backend.'
+      : err.message || 'Chat provider request failed.';
+    res.status(502).json({ message });
   }
 };
 
