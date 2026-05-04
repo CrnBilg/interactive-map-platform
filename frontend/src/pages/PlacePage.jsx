@@ -106,8 +106,8 @@ export default function PlacePage() {
       <div className="h-64 md:h-80 bg-gradient-to-br from-stone-800 to-stone-900 rounded-2xl flex items-center justify-center mb-6 relative overflow-hidden">
         {heroImage ? (
           <>
-            <img src={heroImage} alt="" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-25 blur-xl" aria-hidden="true" />
-            <img src={heroImage} alt={displayPlace.displayName} className="relative z-10 max-h-full max-w-full object-contain" onError={() => setImageFailed(true)} />
+            <img src={heroImage} alt="" className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-25 blur-xl" aria-hidden="true" />
+            <img src={heroImage} alt={displayPlace.displayName} className="pointer-events-none relative z-10 max-h-full max-w-full object-contain" onError={() => setImageFailed(true)} />
           </>
         ) : (
           <div className="flex flex-col items-center gap-3 text-stone-600">
@@ -115,7 +115,7 @@ export default function PlacePage() {
             <span className="text-sm">{t('place.imageUnavailable') || 'Image not available yet'}</span>
           </div>
         )}
-        <div className="absolute top-4 right-4 flex gap-2">
+        <div className="pointer-events-auto absolute top-4 right-4 z-20 flex gap-2">
           <button
             onClick={() => has360 && setPanoramaOpen(true)}
             disabled={!has360}
