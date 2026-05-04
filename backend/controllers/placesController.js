@@ -1,7 +1,7 @@
 const Place = require('../models/Place');
 const City = require('../models/City');
 const User = require('../models/User');
-const { resolvePlaceImage } = require('../utils/placeImages');
+const { resolvePlaceImage, isUsablePlaceImage } = require('../utils/placeImages');
 
 const optionalNumber = (value, fallback) => {
   if (value === undefined || value === null || value === '') return fallback;
@@ -15,7 +15,8 @@ const numberFromQuery = (value) => {
 };
 
 const attachResolvedImage = async (place) => {
-  if (!place || !Array.isArray(place.images) || place.images.some(Boolean)) return place;
+  if (!place || !Array.isArray(place.images)) return place;
+  if (place.images.some(isUsablePlaceImage)) return place;
 
   const imageUrl = await resolvePlaceImage(place);
   if (!imageUrl) return place;
@@ -99,7 +100,7 @@ const getPlaces = async (req, res) => {
       Place.countDocuments(query),
     ]);
 
-    if (!isMapView && places.length <= 12) {
+    if (!isMapView && places.length <= 60) {
       await Promise.all(places.map(attachResolvedImage));
     }
 

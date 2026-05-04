@@ -1,38 +1,73 @@
 const imageCache = new Map();
 
 const IMAGE_TIMEOUT_MS = 2500;
-const WIKIPEDIA_LANGUAGES = ['tr', 'en'];
+const WIKIPEDIA_LANGUAGES = ['en', 'tr'];
+const BAD_IMAGE_WORDS = [
+  'badge',
+  'blank',
+  'coat_of_arms',
+  'diagram',
+  'emblem',
+  'flag',
+  'icon',
+  'logo',
+  'map',
+  'placeholder',
+  'seal',
+  'symbol',
+  'wordmark',
+];
 
 const knownImageTitles = {
-  'Anitkabir': 'Anıtkabir',
-  'Anıtkabir': 'Anıtkabir',
-  'Hagia Sophia': 'Hagia Sophia',
-  'Ayasofya': 'Ayasofya',
-  'Topkapi Palace': 'Topkapı Palace',
-  'Topkapı Palace': 'Topkapı Palace',
-  'Topkapı Sarayı': 'Topkapı Sarayı',
-  'Ephesus Ancient City': 'Ephesus',
-  'Efes Antik Kenti': 'Efes',
-  'Sumela Monastery': 'Sümela Monastery',
-  'Sümela Monastery': 'Sümela Manastırı',
-  'Mevlana Museum': 'Mevlana Museum',
-  'Mevlana Müzesi': 'Mevlana Müzesi',
-  'Safranbolu': 'Safranbolu',
-  'Mount Nemrut': 'Mount Nemrut',
-  'Nemrut Dağı': 'Nemrut Dağı',
-  'Zeugma': 'Zeugma',
-  'Aspendos': 'Aspendos',
-  'Troy Ancient City': 'Troy',
-  'Troya Antik Kenti': 'Truva',
-  'Galata Tower': 'Galata Tower',
-  'Galata Kulesi': 'Galata Kulesi',
-  'Blue Mosque': 'Sultan Ahmed Mosque',
-  'Sultanahmet Camii': 'Sultan Ahmed Mosque',
+  anitkabir: 'An\u0131tkabir',
+  ayasofya: 'Hagia Sophia',
+  'blue mosque': 'Sultan Ahmed Mosque',
+  'efes antik kenti': 'Ephesus',
+  'ephesus ancient city': 'Ephesus',
+  'galata kulesi': 'Galata Tower',
+  'galata tower': 'Galata Tower',
+  'hagia sophia': 'Hagia Sophia',
+  'mevlana museum': 'Mevlana Museum',
+  'mevlana muzesi': 'Mevlana Museum',
+  'mount nemrut': 'Mount Nemrut',
+  'nemrut dagi': 'Mount Nemrut',
+  safranbolu: 'Safranbolu',
+  'sultanahmet camii': 'Sultan Ahmed Mosque',
+  'sumela manastiri': 'S\u00fcmela Monastery',
+  'sumela monastery': 'S\u00fcmela Monastery',
+  'topkapi palace': 'Topkap\u0131 Palace',
+  'topkapi sarayi': 'Topkap\u0131 Palace',
+  'troya antik kenti': 'Troy',
+  'troy ancient city': 'Troy',
+  zeugma: 'Zeugma',
+};
+
+const normalizeText = value => String(value || '')
+  .toLocaleLowerCase('tr-TR')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/\u0131/g, 'i')
+  .replace(/\u0130/g, 'i')
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim()
+  .replace(/\s+/g, ' ');
+
+const isUsablePlaceImage = (url = '') => {
+  if (!/^https?:\/\//i.test(url)) return false;
+
+  const cleanUrl = url.split('?')[0];
+  if (/\.(svg|gif|webm|mp4)$/i.test(cleanUrl)) return false;
+
+  const decoded = decodeURIComponent(cleanUrl).toLowerCase();
+  if (!/\.(jpe?g|png|webp)$/i.test(decoded)) return false;
+  if (BAD_IMAGE_WORDS.some(word => decoded.includes(word))) return false;
+
+  return true;
 };
 
 const getExistingImage = (place) => {
   const images = Array.isArray(place?.images) ? place.images : [];
-  return images.find(Boolean) || '';
+  return images.find(isUsablePlaceImage) || '';
 };
 
 const fetchWikipediaImage = async (language, title) => {
@@ -51,7 +86,12 @@ const fetchWikipediaImage = async (language, title) => {
 
     if (!response.ok) return '';
     const data = await response.json();
-    return data?.originalimage?.source || data?.thumbnail?.source || '';
+    const candidates = [
+      data?.originalimage?.source,
+      data?.thumbnail?.source,
+    ].filter(Boolean);
+
+    return candidates.find(isUsablePlaceImage) || '';
   } catch (err) {
     return '';
   } finally {
@@ -69,7 +109,7 @@ const resolvePlaceImage = async (place) => {
   if (imageCache.has(cacheKey)) return imageCache.get(cacheKey);
 
   const titles = [
-    knownImageTitles[name],
+    knownImageTitles[normalizeText(name)],
     name,
     city && `${name} ${city}`,
   ].filter(Boolean);
@@ -87,4 +127,4 @@ const resolvePlaceImage = async (place) => {
   return imageUrl;
 };
 
-module.exports = { resolvePlaceImage };
+module.exports = { resolvePlaceImage, isUsablePlaceImage };
